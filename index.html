@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>王者荣耀 · 智能客服 Agent · 交互演示</title>
+<style>
+  :root {
+    --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e28;--bg4:#212638;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#e8eaf0;--text2:#9ba3b8;--text3:#5d6478;
+    --gold:#f0c040;--blue:#4a9eff;--teal:#3dcca0;--purple:#9b7fe8;
+    --coral:#f07050;--pink:#e060a0;--green:#6abf50;
+    --amber:#e8a030;--red:#e84040;
+    --radius:8px;--radius-lg:12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px;
+    line-height: 1.6; min-height: 100vh; overflow-x: hidden;
+  }
+  /* ═══ HEADER ═══ */
+  .header {
+    background: var(--bg2); border-bottom: 1px solid var(--border2);
+    padding: 14px 24px; display: flex; align-items: center; gap: 14px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-badge {
+    background: var(--gold); color: #1a1000; font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 4px; letter-spacing: .06em;
+  }
+  .header h1 { font-size: 15px; font-weight: 500; flex: 1; }
+  .header-meta { font-size: 12px; color: var(--text3); font-family: 'SF Mono', monospace; }
+
+  /* ═══ MODE TABS ═══ */
+  .mode-tabs {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; gap: 2px;
+    position: sticky; top: 51px; z-index: 99;
+  }
+  .mode-tab {
+    padding: 10px 18px; font-size: 13px; color: var(--text3);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit; transition: all .2s;
+  }
+  .mode-tab:hover { color: var(--text2); }
+  .mode-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ═══ MAIN LAYOUT ═══ */
+  .main { padding: 16px 24px; display: none; }
+  .main.active { display: block; }
+
+  /* ═══ DEMO MODE ═══ */
+  /* Fixed-height layout: both columns fit the viewport exactly; inner panels handle their own scroll */
+  .demo-layout {
+    display: grid; grid-template-columns: 1fr 1.15fr; gap: 14px;
+    height: calc(100vh - 120px);
+  }
+  .demo-left {
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 0;
+  }
+  .demo-right {
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 0; overflow: hidden;
+  }
+
+  /* ═══ SCENARIO PICKER ═══ */
+  .scenarios {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  .scenarios-title {
+    font-size: 10px; color: var(--text3); letter-spacing: .08em;
+    text-transform: uppercase; margin-bottom: 8px; font-weight: 600;
+  }
+  .scenario-list { display: flex; flex-direction: column; gap: 6px; }
+  .scenario-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-left: 3px solid var(--border2);
+    border-radius: 6px; padding: 8px 10px; cursor: pointer;
+    font-family: inherit; color: var(--text2); font-size: 12px;
+    text-align: left; transition: all .15s; line-height: 1.4;
+  }
+  .scenario-btn:hover { background: var(--bg4); color: var(--text); }
+  .scenario-btn.active {
+    background: rgba(240,192,64,.08); border-color: rgba(240,192,64,.3);
+    border-left-color: var(--gold); color: var(--text);
+  }
+  .scenario-btn .sc-title { font-size: 12px; font-weight: 500; margin-bottom: 2px; color: var(--text); }
+  .scenario-btn .sc-desc { font-size: 10px; color: var(--text3); }
+  .scenario-btn .sc-tag {
+    display: inline-block; font-size: 9px; padding: 1px 5px;
+    border-radius: 3px; margin-top: 3px; font-family: 'SF Mono', monospace;
+  }
+
+  /* ═══ CHAT WINDOW ═══ */
+  .chat-window {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    display: flex; flex-direction: column; flex: 1;
+    min-height: 0;
+  }
+  .chat-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; background: var(--bg3);
+  }
+  .chat-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--coral));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .chat-header-info { flex: 1; }
+  .chat-header-info .name { font-size: 13px; font-weight: 500; }
+  .chat-header-info .status { font-size: 11px; color: var(--teal); }
+  .chat-header-info .status::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--teal); margin-right: 4px;
+    vertical-align: 1px;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 16px; display: flex;
+    flex-direction: column; gap: 12px; min-height: 0;
+  }
+  .msg { display: flex; gap: 8px; animation: slideIn .3s ease-out; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-bubble {
+    max-width: 78%; padding: 9px 13px; border-radius: 12px;
+    font-size: 13px; line-height: 1.55; white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user .msg-bubble {
+    background: var(--blue); color: #fff; border-bottom-right-radius: 3px;
+  }
+  .msg.agent .msg-bubble {
+    background: var(--bg3); color: var(--text); border-bottom-left-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .msg-bubble strong { color: var(--gold); font-weight: 500; }
+  .msg-bubble .tip {
+    display: block; font-size: 11px; color: var(--text3);
+    margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border);
+  }
+  .typing {
+    display: inline-flex; gap: 3px; padding: 6px 10px;
+    background: var(--bg3); border-radius: 12px; border: 1px solid var(--border);
+  }
+  .typing span {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--text3);
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .15s; }
+  .typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+  .chat-input-bar {
+    padding: 10px 14px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px; background: var(--bg3);
+  }
+  .chat-input-bar input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 11px; color: var(--text);
+    font-family: inherit; font-size: 13px; outline: none;
+  }
+  .chat-input-bar input:focus { border-color: var(--gold); }
+  .chat-input-bar button {
+    background: var(--gold); color: #1a1000; border: none;
+    border-radius: 6px; padding: 7px 14px; font-family: inherit;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  .chat-input-bar button:hover { opacity: .9; }
+  .chat-input-bar button:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ═══ AGENT THINKING PANEL ═══ */
+  .thinking-panel {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    display: flex; flex-direction: column; flex: 1;
+    min-height: 0;
+  }
+  .panel-tabs { display: flex; gap: 2px; }
+  .panel-tab {
+    background: none; border: none; color: var(--text3);
+    font-family: inherit; font-size: 13px; padding: 6px 12px;
+    cursor: pointer; border-radius: 6px; transition: all .15s;
+  }
+  .panel-tab:hover { color: var(--text2); }
+  .panel-tab.active {
+    color: var(--gold); background: rgba(240,192,64,.08);
+  }
+  .panel-tab.flash {
+    animation: tabFlash 1.4s ease-out;
+  }
+  @keyframes tabFlash {
+    0%   { background: rgba(61,204,160,.3); color: var(--teal); }
+    50%  { background: rgba(61,204,160,.15); color: var(--teal); }
+    100% { background: transparent; color: var(--text3); }
+  }
+  .panel-tab.active.flash {
+    animation: none;
+  }
+  .panel-body {
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+    position: relative;
+  }
+  .panel-content {
+    display: none; flex: 1; min-height: 0; overflow: hidden;
+  }
+  .panel-content.active { display: flex; flex-direction: column; }
+
+  /* ═══ KNOWLEDGE GRAPH VISUALIZATION ═══ */
+  .graph-container {
+    flex: 1; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .graph-svg-wrap {
+    flex: 1; min-height: 0; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(74,158,255,.04) 0%, transparent 60%);
+  }
+  .graph-svg { max-width: 100%; max-height: 100%; }
+
+  .graph-node circle {
+    transition: all .4s ease;
+    cursor: pointer;
+  }
+  .graph-node.dimmed { opacity: 0.2; }
+  .graph-node.active circle {
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+  .graph-node text {
+    font-family: 'PingFang SC', sans-serif;
+    font-size: 11px;
+    fill: var(--text2);
+    text-anchor: middle;
+    pointer-events: none;
+    transition: fill .3s;
+  }
+  .graph-node.active text { fill: var(--text); font-weight: 600; }
+  .graph-node.dimmed text { fill: var(--text3); }
+
+  .graph-edge {
+    stroke: var(--border2); stroke-width: 1;
+    transition: all .4s ease;
+    fill: none;
+  }
+  .graph-edge.dimmed { opacity: 0.15; }
+  .graph-edge.active {
+    stroke: var(--gold); stroke-width: 2.5;
+    filter: drop-shadow(0 0 4px var(--gold));
+    animation: dashFlow 1.5s linear infinite;
+    stroke-dasharray: 6, 4;
+  }
+  @keyframes dashFlow {
+    to { stroke-dashoffset: -20; }
+  }
+  .graph-edge-label {
+    font-family: 'SF Mono', monospace;
+    font-size: 9px;
+    fill: var(--text3);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  .graph-edge-label.active {
+    fill: var(--gold); opacity: 1;
+  }
+
+  .graph-legend {
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 14px; flex-wrap: wrap;
+    background: var(--bg3);
+    flex-shrink: 0;
+  }
+  .graph-legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text2);
+  }
+  .graph-legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .graph-query-info {
+    padding: 10px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .graph-query-info .label {
+    font-size: 10px; color: var(--text3);
+    letter-spacing: .06em; text-transform: uppercase;
+    margin-right: 6px;
+  }
+  .graph-query-info .path {
+    font-family: 'SF Mono', monospace;
+    color: var(--gold);
+  }
+  .panel-header {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    background: var(--bg3); display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .panel-header-title { font-size: 13px; font-weight: 500; }
+  .panel-header-sub { font-size: 11px; color: var(--text3); font-family: 'SF Mono', monospace; }
+  .thinking-steps {
+    flex: 1; overflow-y: auto; padding: 14px; display: flex;
+    flex-direction: column; gap: 8px; min-height: 0;
+    scroll-behavior: smooth;
+  }
+  .think-step {
+    background: var(--bg3); border-left: 3px solid var(--border2);
+    border-radius: 0 6px 6px 0; padding: 10px 12px;
+    animation: slideIn .3s ease-out; transition: all .2s;
+  }
+  .think-step.active {
+    border-left-color: var(--gold);
+    background: rgba(240,192,64,.06);
+  }
+  .think-step.done { border-left-color: var(--teal); opacity: 0.78; }
+  .think-step.parallel-group {
+    background: transparent; border-left: none; padding: 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .think-step-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  }
+  .step-num {
+    font-size: 10px; font-weight: 600; color: var(--text3);
+    font-family: 'SF Mono', monospace; min-width: 24px;
+  }
+  .step-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .step-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', monospace;
+  }
+  .step-tag.orchestrator { background: rgba(155,127,232,.15); color: var(--purple); }
+  .step-tag.domain { background: rgba(74,158,255,.15); color: var(--blue); }
+  .step-tag.policy { background: rgba(61,204,160,.12); color: var(--teal); }
+  .step-tag.external { background: rgba(240,112,80,.12); color: var(--coral); }
+  .step-tag.success { background: rgba(106,191,80,.15); color: var(--green); }
+  .step-tag.warning { background: rgba(232,160,48,.15); color: var(--amber); }
+  .step-tag.error { background: rgba(232,64,64,.15); color: var(--red); }
+  .step-body { font-size: 12px; color: var(--text2); line-height: 1.55; }
+  .step-body .code {
+    font-family: 'SF Mono', monospace; font-size: 11px;
+    background: var(--bg); padding: 1px 5px; border-radius: 3px;
+    color: var(--teal); border: 1px solid var(--border);
+  }
+  .step-meta {
+    display: flex; gap: 10px; margin-top: 6px; font-size: 10px;
+    color: var(--text3); font-family: 'SF Mono', monospace;
+  }
+  .step-meta span.highlight { color: var(--gold); }
+  .step-meta span.success-text { color: var(--teal); }
+  .step-meta span.error-text { color: var(--red); }
+
+  /* Parallel agents */
+  .parallel-agent {
+    background: var(--bg3); border-left: 3px solid var(--blue);
+    border-radius: 0 6px 6px 0; padding: 8px 10px;
+  }
+  .parallel-agent.agent-payment { border-left-color: #D85A30; }
+  .parallel-agent.agent-match   { border-left-color: #BA7517; }
+  .parallel-agent.agent-account { border-left-color: #378ADD; }
+  .parallel-agent.agent-content { border-left-color: #1D9E75; }
+  .parallel-agent .pa-head { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+  .parallel-agent .pa-status {
+    font-size: 10px; font-family: 'SF Mono', monospace;
+    color: var(--text3); margin-bottom: 4px;
+  }
+  .parallel-agent .pa-body { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .progress-bar {
+    height: 3px; background: var(--bg); border-radius: 2px; overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%; background: var(--gold); width: 0%;
+    transition: width .3s linear;
+  }
+
+  /* ═══ DESIGN DECISION CARD ═══ */
+  .design-card-container {
+    flex-shrink: 0; /* don't let it shrink */
+    max-height: 34%; overflow-y: auto;
+  }
+  .design-card-container:empty { display: none; }
+  .design-card {
+    background: linear-gradient(135deg, rgba(240,192,64,.08), rgba(61,204,160,.04));
+    border: 1px solid rgba(240,192,64,.25);
+    border-radius: var(--radius-lg); padding: 14px 16px;
+    animation: slideIn .4s ease-out;
+  }
+  .design-card h4 {
+    font-size: 12px; font-weight: 600; color: var(--gold);
+    letter-spacing: .05em; text-transform: uppercase;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .design-card h4::before { content: '✦'; color: var(--gold); }
+  .design-card .decision-body { font-size: 12px; color: var(--text); line-height: 1.65; }
+  .design-card .tradeoff {
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 11px; color: var(--text2);
+  }
+  .design-card .tradeoff strong { color: var(--amber); font-weight: 500; }
+
+  /* ═══ ARCHITECTURE MODE ═══ */
+  #mode-arch { padding: 24px 24px 40px; }
+  .arch-container {
+    max-width: 1240px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .arch-intro {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 22px 26px;
+  }
+  .arch-title {
+    font-size: 18px; font-weight: 500; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .arch-title::before {
+    content: ''; width: 4px; height: 20px;
+    background: var(--gold); border-radius: 2px;
+  }
+  .arch-sub { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+  .arch-layer {
+    border-radius: var(--radius-lg); padding: 20px 22px;
+    border: 1px solid; position: relative;
+  }
+  .arch-layer.l1 {
+    background: rgba(155,127,232,.05); border-color: rgba(155,127,232,.22);
+  }
+  .arch-layer.l2 {
+    background: rgba(74,158,255,.04); border-color: rgba(74,158,255,.2);
+  }
+  .arch-layer.l3 {
+    background: rgba(61,204,160,.04); border-color: rgba(61,204,160,.2);
+  }
+  .layer-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .layer-tag::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, currentColor, transparent);
+    opacity: .3;
+  }
+  .arch-layer.l1 .layer-tag { color: var(--purple); }
+  .arch-layer.l2 .layer-tag { color: var(--blue); }
+  .arch-layer.l3 .layer-tag { color: var(--teal); }
+
+  .agent-cards { display: grid; gap: 14px; }
+  .agent-cards.cols-2 { grid-template-columns: 1fr 1fr; }
+  .agent-cards.cols-5 { grid-template-columns: repeat(5,1fr); }
+  .agent-cards.cols-4 { grid-template-columns: repeat(4,1fr); }
+  .arch-agent {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-left: 3px solid;
+    border-radius: 8px; padding: 14px 16px;
+  }
+  .arch-agent.account { border-left-color: #378ADD; }
+  .arch-agent.payment { border-left-color: #D85A30; }
+  .arch-agent.match   { border-left-color: #BA7517; }
+  .arch-agent.content { border-left-color: #1D9E75; }
+  .arch-agent.policy  { border-left-color: #9b7fe8; }
+  .arch-agent.lang-cn { border-left-color: var(--gold); }
+  .arch-agent.orch    { border-left-color: var(--purple); }
+  .arch-agent .aa-name {
+    font-size: 13px; font-weight: 600; margin-bottom: 8px;
+    color: var(--text);
+  }
+  .arch-agent .aa-desc {
+    font-size: 11px; color: var(--text2); line-height: 1.7;
+  }
+  .arch-agent .aa-desc strong {
+    color: var(--text); font-weight: 500;
+  }
+
+  /* Vertical connector between layers */
+  .arch-connector {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; margin: -4px 0;
+  }
+  .arch-connector-line {
+    width: 1px; height: 18px;
+    background: linear-gradient(to bottom, transparent, var(--border2), transparent);
+  }
+  .arch-connector-label {
+    font-size: 11px; color: var(--text3);
+    letter-spacing: .04em; padding: 2px 10px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: 'SF Mono', monospace;
+  }
+
+  /* Data flow card */
+  .arch-flow {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px 24px;
+  }
+  .arch-flow-title {
+    font-size: 14px; font-weight: 500; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .arch-flow-title::before {
+    content: ''; width: 3px; height: 16px;
+    background: var(--teal); border-radius: 2px;
+  }
+  .arch-flow-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;
+  }
+  .arch-flow-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--text2); line-height: 1.7;
+    padding: 4px 0;
+  }
+  .arch-flow-row .num {
+    background: rgba(240,192,64,.15); color: var(--gold);
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px;
+    font-family: 'SF Mono', monospace;
+    flex-shrink: 0; min-width: 28px; text-align: center;
+    border: 1px solid rgba(240,192,64,.2);
+  }
+  .arch-flow-row .code {
+    font-family: 'SF Mono', monospace; font-size: 11px;
+    background: var(--bg); padding: 1px 6px; border-radius: 3px;
+    color: var(--teal); border: 1px solid var(--border);
+    display: inline-block; margin: 0 2px;
+  }
+
+  /* ═══ CONTROLS ═══ */
+  .demo-controls {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 10px 14px;
+    display: flex; gap: 10px; align-items: center;
+    flex-shrink: 0;
+  }
+  .ctrl-group {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .ctrl-divider {
+    width: 1px; height: 20px; background: var(--border);
+    margin: 0 2px;
+  }
+  .ctrl-btn {
+    background: var(--bg3); color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: 32px;
+    padding: 0 12px;
+    font-family: inherit; font-size: 12px;
+    cursor: pointer; transition: all .15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    line-height: 1;
+  }
+  .ctrl-btn:hover:not(:disabled) {
+    background: var(--bg4); color: var(--text);
+    border-color: var(--border2);
+  }
+  .ctrl-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .ctrl-btn:disabled {
+    opacity: .35; cursor: not-allowed;
+  }
+  .ctrl-btn svg {
+    width: 13px; height: 13px; fill: currentColor;
+    flex-shrink: 0;
+  }
+  /* Icon-only buttons (compact) */
+  .ctrl-btn.icon-only {
+    width: 32px; padding: 0;
+    justify-content: center;
+  }
+  /* Primary next-step button */
+  .ctrl-btn.primary {
+    background: linear-gradient(135deg, var(--gold), #e0a830);
+    color: #1a1000;
+    border-color: var(--gold);
+    font-weight: 600;
+    padding: 0 16px;
+    box-shadow: 0 2px 8px rgba(240,192,64,.15);
+  }
+  .ctrl-btn.primary:hover:not(:disabled) {
+    box-shadow: 0 3px 12px rgba(240,192,64,.3);
+    filter: brightness(1.05);
+  }
+  .ctrl-btn.primary:disabled {
+    background: var(--bg3); color: var(--text3);
+    border-color: var(--border);
+    box-shadow: none; font-weight: 500;
+  }
+  /* Auto-play in "playing" state */
+  .ctrl-btn.playing {
+    background: rgba(240,192,64,.12);
+    border-color: rgba(240,192,64,.35);
+    color: var(--gold);
+  }
+
+  /* Step progress indicator */
+  .step-progress {
+    display: flex; align-items: center; gap: 8px;
+    margin-left: auto;
+    padding: 0 12px;
+    height: 32px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    font-size: 11px;
+    font-family: 'SF Mono', monospace;
+  }
+  .step-progress-track {
+    width: 80px; height: 4px;
+    background: var(--bg); border-radius: 2px;
+    overflow: hidden; position: relative;
+  }
+  .step-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal), var(--gold));
+    border-radius: 2px;
+    transition: width .4s ease;
+    width: 0%;
+  }
+  .step-progress.complete .step-progress-fill {
+    background: var(--teal);
+  }
+  .step-progress-text {
+    font-weight: 500;
+    min-width: 42px; text-align: right;
+    color: var(--text);
+  }
+  .step-progress.complete .step-progress-text {
+    color: var(--teal);
+  }
+  .step-progress.empty .step-progress-text {
+    color: var(--text3);
+  }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--text3);
+    padding-left: 6px;
+  }
+  .kbd {
+    display: inline-block; font-family: 'SF Mono', monospace;
+    font-size: 10px; padding: 1px 5px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 3px; color: var(--text2);
+    line-height: 1.2; min-width: 16px; text-align: center;
+  }
+
+  /* ═══ EMPTY STATES ═══ */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text3); padding: 40px 20px; text-align: center;
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .5; }
+  .empty-state .msg { font-size: 13px; margin-bottom: 4px; }
+  .empty-state .sub { font-size: 11px; color: var(--text3); }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 900px) {
+    .demo-layout { grid-template-columns: 1fr; }
+    .agent-cards.cols-5, .agent-cards.cols-4 { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ═══ SCROLLBARS ═══ */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">HOK CS</div>
+  <h1>王者荣耀 · 智能客服 Agent · 交互演示</h1>
+  <div class="header-meta">DEMO v1.0 · 2026年4月 · @AI产品日志</div>
+</div>
+
+<nav class="mode-tabs">
+  <button class="mode-tab active" data-mode="demo" onclick="switchMode('demo', this)">对话演示</button>
+  <button class="mode-tab" data-mode="arch" onclick="switchMode('arch', this)">多 Agent 架构全景</button>
+</nav>
+
+<!-- ══════════════════ DEMO MODE ══════════════════ -->
+<div id="mode-demo" class="main active">
+  <div class="demo-layout">
+    <!-- LEFT: Scenario picker + Chat -->
+    <div class="demo-left">
+      <div class="scenarios">
+        <div class="scenarios-title">演示场景（点击加载）</div>
+        <div class="scenario-list" id="scenario-list"></div>
+      </div>
+
+      <div class="chat-window">
+        <div class="chat-header">
+          <div class="chat-avatar">🎮</div>
+          <div class="chat-header-info">
+            <div class="name">王者荣耀智能客服</div>
+            <div class="status">多 Agent 在线</div>
+          </div>
+          <div class="header-meta" id="chat-meta">等待场景</div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="empty-state">
+            <div class="icon">💬</div>
+            <div class="msg">选择左上角场景开始演示</div>
+            <div class="sub">或在下方输入框手动输入</div>
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="输入你的问题（演示模式下建议用场景按钮）" disabled>
+          <button id="send-btn" disabled>发送</button>
+        </div>
+      </div>
+
+      <div class="demo-controls">
+        <div class="ctrl-group">
+          <button class="ctrl-btn icon-only" id="prev-step-btn" disabled title="上一步">
+            <svg viewBox="0 0 24 24"><path d="M15.5 5L8 12l7.5 7 1.4-1.4L10.8 12l6.1-5.6z"/></svg>
+          </button>
+          <button class="ctrl-btn primary" id="next-step-btn" disabled>
+            下一步
+            <svg viewBox="0 0 24 24"><path d="M8.5 5l7.5 7-7.5 7-1.4-1.4L13.2 12 7.1 6.4z"/></svg>
+          </button>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl-group">
+          <button class="ctrl-btn" id="auto-btn" disabled>
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span id="auto-btn-label">自动播放</span>
+          </button>
+          <button class="ctrl-btn" id="reset-btn" title="重置场景">
+            <svg viewBox="0 0 24 24"><path d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.12a6 6 0 1 1-1.43-6.22L13 11h7V4l-2.35 2.35z"/></svg>
+            重置
+          </button>
+        </div>
+        <div class="step-progress empty" id="step-progress">
+          <div class="step-progress-track"><div class="step-progress-fill" id="step-progress-fill"></div></div>
+          <span class="step-progress-text" id="step-indicator">— / —</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Agent thinking panel -->
+    <div class="demo-right">
+      <div class="thinking-panel">
+        <div class="panel-header">
+          <div class="panel-tabs">
+            <button class="panel-tab active" data-ptab="steps" onclick="switchPanelTab('steps',this)">🧠 处理步骤</button>
+            <button class="panel-tab" data-ptab="graph" onclick="switchPanelTab('graph',this)">🕸️ 知识图谱检索</button>
+          </div>
+          <div class="panel-header-sub" id="thinking-meta">空闲</div>
+        </div>
+        <div class="panel-body">
+          <div class="panel-content active" data-pcontent="steps">
+            <div class="thinking-steps" id="thinking-steps">
+              <div class="empty-state">
+                <div class="icon">⚙️</div>
+                <div class="msg">选择场景后，这里会展示 Agent 的完整处理链路</div>
+                <div class="sub">从 NLU 识别 · 任务派发 · 工具调用 · 规则核验 · 回复生成</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel-content" data-pcontent="graph">
+            <div class="graph-container" id="graph-container">
+              <div class="empty-state">
+                <div class="icon">🕸️</div>
+                <div class="msg">场景执行到图谱检索步骤时，这里会实时展示多跳推理路径</div>
+                <div class="sub">14 节点知识图谱 · 高亮查询经过的节点与边</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="design-card-container" class="design-card-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ARCHITECTURE MODE ══════════════════ -->
+<div id="mode-arch" class="main">
+  <div class="arch-container">
+
+    <!-- Intro -->
+    <div class="arch-intro">
+      <div class="arch-title">三层多 Agent 协同架构</div>
+      <div class="arch-sub">
+        Orchestrator 负责路由与结果合并 · 5 个专域 Agent 并行处理 · 语言适配层按区服注入差异化规则 · 权限沙箱隔离防止跨域越权
+      </div>
+    </div>
+
+    <!-- L1: Orchestration -->
+    <div class="arch-layer l1">
+      <div class="layer-tag">L1 · 编排层　Orchestration Layer</div>
+      <div class="agent-cards cols-2">
+        <div class="arch-agent orch">
+          <div class="aa-name">Orchestrator Agent</div>
+          <div class="aa-desc">
+            <strong>NLU 意图识别</strong>　识别 5 大意图类别，判断单域/多域<br>
+            <strong>任务派发</strong>　按域拆解任务，并行派发至专域 Agent<br>
+            <strong>结果合并</strong>　汇聚子 Agent 输出，统一生成回复
+          </div>
+        </div>
+        <div class="arch-agent orch">
+          <div class="aa-name">Context Manager</div>
+          <div class="aa-desc">
+            <strong>会话状态</strong>　跨 Agent 共享多轮对话上下文<br>
+            <strong>全局槽位</strong>　uid / platform / language 等通用字段<br>
+            <strong>情绪追踪</strong>　情绪分值持续更新，防止重复追问
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="arch-connector">
+      <div class="arch-connector-line"></div>
+      <div class="arch-connector-label">↓ 任务派发　A2A Protocol</div>
+      <div class="arch-connector-line"></div>
+    </div>
+
+    <!-- L2: Domain Agents -->
+    <div class="arch-layer l2">
+      <div class="layer-tag">L2 · 专域执行层　Domain Agents · 并行执行</div>
+      <div class="agent-cards cols-5">
+        <div class="arch-agent account">
+          <div class="aa-name">账号安全 Agent</div>
+          <div class="aa-desc">
+            封禁 / 申诉 / 被盗<br>
+            <span style="color:var(--text3)">图谱：Account · Punishment · Device</span>
+          </div>
+        </div>
+        <div class="arch-agent payment">
+          <div class="aa-name">支付退款 Agent</div>
+          <div class="aa-desc">
+            充值 / 退款 / 重复扣款<br>
+            <span style="color:var(--text3)">图谱：Order · Skin</span>
+          </div>
+        </div>
+        <div class="arch-agent match">
+          <div class="aa-name">对局补偿 Agent</div>
+          <div class="aa-desc">
+            掉线 / 外挂 / 挂机<br>
+            <span style="color:var(--text3)">图谱：Match · Compensation</span>
+          </div>
+        </div>
+        <div class="arch-agent content">
+          <div class="aa-name">游戏内容 Agent</div>
+          <div class="aa-desc">
+            英雄 / 皮肤 / 通行证<br>
+            <span style="color:var(--text3)">图谱：Hero · Skin · Season · Event</span>
+          </div>
+        </div>
+        <div class="arch-agent policy">
+          <div class="aa-name">规则政策 Agent</div>
+          <div class="aa-desc">
+            规则仲裁 / SSOT<br>
+            <span style="color:var(--text3)">图谱：Policy（全量只读）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connector -->
+    <div class="arch-connector">
+      <div class="arch-connector-line"></div>
+      <div class="arch-connector-label">↓ 规则注入　按语言区版本</div>
+      <div class="arch-connector-line"></div>
+    </div>
+
+    <!-- L3: Language Adapters -->
+    <div class="arch-layer l3">
+      <div class="layer-tag">L3 · 语言适配层　Language Adapters</div>
+      <div class="agent-cards cols-4">
+        <div class="arch-agent lang-cn">
+          <div class="aa-name">中文适配器</div>
+          <div class="aa-desc">
+            国服规则 · 个保法合规<br>
+            <span style="color:var(--text3)">微信 / 支付宝 · 退款期 7 天</span>
+          </div>
+        </div>
+        <div class="arch-agent lang-cn">
+          <div class="aa-name">繁中适配器</div>
+          <div class="aa-desc">
+            港澳台服 · 繁简转换<br>
+            <span style="color:var(--text3)">无防沉迷 · 本地支付</span>
+          </div>
+        </div>
+        <div class="arch-agent lang-cn">
+          <div class="aa-name">东南亚适配器</div>
+          <div class="aa-desc">
+            泰 / 印尼 / 马来 / 越南<br>
+            <span style="color:var(--text3)">PDPA · 退款期 14 天</span>
+          </div>
+        </div>
+        <div class="arch-agent lang-cn">
+          <div class="aa-name">英语适配器</div>
+          <div class="aa-desc">
+            EN-US 区服 · 通用规则集<br>
+            <span style="color:var(--text3)">Google Pay 渠道</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow -->
+    <div class="arch-flow">
+      <div class="arch-flow-title">一条请求的完整流转（多 Agent 并行场景）</div>
+      <div class="arch-flow-grid">
+        <div class="arch-flow-row">
+          <span class="num">01</span>
+          <span>用户输入 → Orchestrator NLU 识别意图（多个则准备并行派发）</span>
+        </div>
+        <div class="arch-flow-row">
+          <span class="num">02</span>
+          <span>Orchestrator 构造 <span class="code">{task_id, domain, slots, lang_adapter, timeout_ms}</span> 下发</span>
+        </div>
+        <div class="arch-flow-row">
+          <span class="num">03</span>
+          <span>专域 Agent 并行执行：子图检索 → 工具调用 → Policy 核验 → 置信度评估</span>
+        </div>
+        <div class="arch-flow-row">
+          <span class="num">04</span>
+          <span>各 Agent 返回 <span class="code">{confidence, response_draft, evidence, escalate_flag}</span></span>
+        </div>
+        <div class="arch-flow-row">
+          <span class="num">05</span>
+          <span>Orchestrator 合并结果 → 语言适配器生成最终回复</span>
+        </div>
+        <div class="arch-flow-row">
+          <span class="num">06</span>
+          <span>任一 Agent 触发 <span class="code">escalate_flag=true</span> → Orchestrator 统一升级人工</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// SCENARIOS DATA
+// ════════════════════════════════════════════════════════
+const SCENARIOS = [
+  {
+    id: 'single',
+    title: '经典场景：掉线被判负',
+    desc: '单域意图 · 完整基础链路',
+    tag: 'SINGLE AGENT',
+    tagColor: 'var(--blue)',
+    userQuery: '刚才我掉线了被判负扣了20分，能补偿吗？',
+    steps: [
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 意图识别',
+        tag: 'NLU',
+        body: '识别意图为<span class="code">match_abnormal_compensation</span>（对局异常补偿），单一意图，置信度 0.94',
+        meta: ['latency: 180ms', 'confidence: 0.94', '单域任务']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 路由决策',
+        tag: 'ROUTE',
+        body: '单域任务，无需拆解 → 派发给 <span class="code">对局补偿 Agent</span>',
+        meta: ['task_id: t-20260418-7721', 'target: match_agent']
+      },
+      {
+        type: 'domain-match',
+        label: '对局补偿 Agent · 子图检索',
+        tag: 'GRAPH',
+        body: '检索玩家最近一场对局：<br>・Match.disconnect_duration = 320秒<br>・Match.disconnect_reason = NETWORK<br>・Match.penalty_applied = true',
+        meta: ['Neo4j 2跳查询', 'latency: 95ms'],
+        graphPath: ['Player', 'Match']
+      },
+      {
+        type: 'domain-match',
+        label: '对局补偿 Agent · 工具调用',
+        tag: 'API',
+        body: '调用 <span class="code">对局记录 API</span> 核验断线真实性 → 确认服务端网络异常导致断线，非主动退出',
+        meta: ['API: match_verify', 'latency: 210ms', '验证通过']
+      },
+      {
+        type: 'policy',
+        label: '规则政策 Agent · Policy 核验',
+        tag: 'SSOT',
+        body: '查询 <span class="code">Policy#MATCH_COMPENSATION_v3.2</span>：<br>・断线 >3min 且非主动退出 → 符合补偿条件<br>・本赛季已申请 1 次，剩余 2 次',
+        meta: ['policy_id: POL-MCP-032', 'applicable: true'],
+        graphPath: ['Player', 'Match', 'Compensation', 'Policy']
+      },
+      {
+        type: 'domain-match',
+        label: '对局补偿 Agent · 生成方案',
+        tag: 'RESOLVE',
+        body: '自动生成补偿方案：撤销段位扣分 +20 分，发放 50 金币，无需人工介入',
+        meta: ['confidence: 0.91', 'escalate: false']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 回复生成',
+        tag: 'REPLY',
+        body: '通过中文适配器生成自然语言回复，附带补偿凭证',
+        meta: ['total_latency: 1.12s', 'auto_resolved: ✓']
+      }
+    ],
+    reply: '已为您查询到这场对局：\n\n**掉线时长**：5 分 20 秒（>3 分钟）\n**断线原因**：网络异常（已验证非主动退出）\n**补偿方案**：撤销段位扣分 20 分 + 50 金币\n\n补偿已即时到账，24 小时内生效。本赛季您还有 2 次申请机会。\n✨ 如果还有其他问题随时找我～',
+    decision: {
+      title: '为什么单 Agent 就能完成？',
+      body: 'NLU 识别出意图单一明确，不需要跨域协作。对局补偿 Agent 独立完成「查断线记录 → 验证真实性 → 核对规则 → 生成方案」的完整链路。',
+      tradeoff: '权衡：如果强行拆成多个子任务，会引入不必要的 Orchestrator 调度开销。实测单域任务综合时延能压到 1.2s 以内，拆分反而会降低体验。'
+    }
+  },
+  {
+    id: 'parallel',
+    title: '🔥 核心场景：复合问题并行',
+    desc: '多域并行 · Orchestrator 拆解合并',
+    tag: 'MULTI AGENT',
+    tagColor: 'var(--gold)',
+    userQuery: '我掉线被判负了，而且昨天充值买的皮肤到现在都没到账，怎么办？',
+    steps: [
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 多意图识别',
+        tag: 'NLU',
+        body: '识别到 <strong>2 个独立意图</strong>：<br>① <span class="code">match_abnormal_compensation</span>（对局补偿） conf=0.93<br>② <span class="code">payment_delivery_delay</span>（充值未到账） conf=0.91',
+        meta: ['latency: 210ms', '触发并行派发']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 任务拆解',
+        tag: 'DISPATCH',
+        body: '构造两个任务包，分别设置 <span class="code">timeout=3000ms</span>，同一 context_id，并行派发到两个专域 Agent',
+        meta: ['t-20260418-8821', 't-20260418-8822', 'parallel_mode: true']
+      },
+      {
+        type: 'parallel',
+        label: '🚀 专域 Agent 并行执行',
+        agents: [
+          {
+            type: 'match',
+            name: '对局补偿 Agent',
+            status: 'RUNNING...',
+            body: '<strong>子图检索</strong>：Match#20260417-last → disconnect=320s<br><strong>工具调用</strong>：match_verify API → 网络异常确认<br><strong>Policy 核验</strong>：符合补偿条件',
+            progress: 100,
+            result: {
+              confidence: 0.91,
+              latency: 1080,
+              resolution: '撤销扣分 +20 / 补偿 50 金币'
+            }
+          },
+          {
+            type: 'payment',
+            name: '支付退款 Agent',
+            status: 'RUNNING...',
+            body: '<strong>子图检索</strong>：Order#PO-20260417 → status=PAID<br><strong>工具调用</strong>：payment_query API → 第三方渠道已收款<br><strong>异常诊断</strong>：发放队列拥堵（非真实丢失）',
+            progress: 100,
+            result: {
+              confidence: 0.88,
+              latency: 1240,
+              resolution: '预计 30 分钟内补发'
+            }
+          }
+        ],
+        meta: ['并行执行', 'max_latency: 1.24s', '两个 Agent 独立完成'],
+        graphPath: ['Player', 'Match', 'Compensation', 'Order', 'Skin']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 结果合并',
+        tag: 'MERGE',
+        body: '合并两份回复草稿：<br>・去重共享槽位（uid 只查一次）<br>・按问题顺序组织回复<br>・统一语气与格式',
+        meta: ['confidence_min: 0.88', 'escalate: false']
+      },
+      {
+        type: 'policy',
+        label: '中文适配器 · 回复生成',
+        tag: 'LANG',
+        body: '注入中文适配器（个保法合规 + 国服支付渠道表述），生成自然连贯的最终回复',
+        meta: ['lang: zh-CN', 'total_latency: 1.38s']
+      }
+    ],
+    reply: '我同时帮您查了这两件事：\n\n**① 对局掉线补偿**\n掉线 5 分 20 秒，确认是网络异常非主动退出。\n→ 已为您撤销段位扣分 20 分，补偿 50 金币（即时到账）\n\n**② 充值未到账问题**\n订单 PO-20260417 已查到，第三方渠道扣款成功，是发放队列短暂拥堵。\n→ 已提交补发工单，预计 30 分钟内到账，无需重复充值\n\n两件事都处理好了，如果 30 分钟后皮肤仍未到账请随时找我～',
+    decision: {
+      title: '为什么必须用多 Agent 并行？',
+      body: '如果单 Agent 串行处理这两个问题：对局查询 1.1s + 支付查询 1.2s = 综合时延 2.3s。多 Agent 并行后，综合时延 = max(1.1s, 1.2s) = 1.2s，<strong>降低 48%</strong>。',
+      tradeoff: '权衡：并行架构需要 Orchestrator 处理任务拆解、超时控制、结果合并的复杂度，工程投入更高。但在用户感知层面，复合问题不再需要多轮对话分别解决，单次响应的体验收益显著。真实场景中 8% 的问题属于这类复合问题，这部分用户的满意度提升最明显。'
+    }
+  },
+  {
+    id: 'fallback',
+    title: '降级场景：Agent 超时 · 升人工',
+    desc: '系统韧性 · 降级链路完整性',
+    tag: 'RESILIENCE',
+    tagColor: 'var(--red)',
+    userQuery: '我的账号被封了，申诉好几次都没回复，我是不是被针对了？快给我解封！',
+    steps: [
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 意图 + 情绪识别',
+        tag: 'NLU',
+        body: '识别意图 <span class="code">ban_appeal</span>（封禁申诉），conf=0.89<br>情绪分值：<span style="color:var(--red)">0.82（愤怒）</span> · 触发情绪前置处理',
+        meta: ['sentiment: anger=0.82', 'priority_boost: true']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 路由决策',
+        tag: 'ROUTE',
+        body: '高情绪用户 · 派发至 <span class="code">账号安全 Agent</span>，同时降低升人工阈值至 0.75',
+        meta: ['target: account_agent', 'escalate_threshold: 0.75']
+      },
+      {
+        type: 'domain-account',
+        label: '账号安全 Agent · 尝试执行',
+        tag: 'API',
+        body: '调用 <span class="code">account_appeal_history API</span> 查询申诉记录<br>API 响应超时（>3000ms）→ 熔断器触发',
+        meta: ['timeout: 3000ms', 'circuit_breaker: OPEN'],
+        metaClass: 'error-text',
+        graphPath: ['Player', 'Account', 'Punishment', 'Issue']
+      },
+      {
+        type: 'domain-account',
+        label: '账号安全 Agent · 降级尝试',
+        tag: 'FALLBACK',
+        body: '触发降级策略：<br>・一级降级：调用副本 API → 仍超时<br>・二级降级：读取 Redis 热缓存 → 命中 24 小时前快照<br>・置信度因数据时效性下降至 0.72',
+        meta: ['fallback_level: L2', 'data_freshness: 24h ago'],
+        metaClass: 'warning-text'
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 升级决策',
+        tag: 'ESCALATE',
+        body: '综合判断触发升级条件：<br>① 置信度 0.72 < 阈值 0.75<br>② 情绪分值 0.82（愤怒）<br>③ 涉及账号安全类敏感操作<br>→ 决策：<strong>立即升级人工</strong>',
+        meta: ['escalate: true', 'priority: P1', 'queue: security_team']
+      },
+      {
+        type: 'policy',
+        label: '预填工单 · 优先级标注',
+        tag: 'TICKET',
+        body: '为人工客服预填完整工单：<br>・玩家基础信息（脱敏）<br>・过往 3 次申诉记录（Redis 快照）<br>・情绪预警标注<br>・P1 优先级 · 目标接入 <30min',
+        meta: ['ticket_id: TK-20260418-9912', 'sla: 30min']
+      }
+    ],
+    reply: '非常理解您现在的心情，多次申诉没结果确实很让人焦虑。\n\n我刚才尝试查询您的申诉记录时系统响应异常，为了给您准确答复，**已经帮您提前安排人工客服专员跟进**。\n\n**工单号**：TK-20260418-9912\n**优先级**：高（30 分钟内接入）\n**已提交信息**：您的账号基础信息 + 过往申诉记录\n\n专员会主动联系您，不用重新描述情况。',
+    decision: {
+      title: '失败场景的设计哲学：优雅降级 ≠ 强行回答',
+      body: '真正的生产系统韧性不是"永不失败"，而是<strong>失败时如何优雅降级</strong>。本场景展示了三层保护：① API 层熔断防止雪崩；② 数据层 Redis 热缓存兜底；③ 决策层在置信度不足 + 高情绪时主动升人工。',
+      tradeoff: '权衡：降级链路会增加系统复杂度，监控也更复杂（需要追踪每一层的降级触发率）。但代价是明确的——宁可升人工延迟几分钟，不能让愤怒用户得到错误答复，尤其是涉及账号安全类敏感问题。这是客服系统的"医疗伦理"级别底线。'
+    }
+  },
+  {
+    id: 'multilang',
+    title: '🌏 多语言场景：泰国玩家退款',
+    desc: '语言适配器 · 差异化 Policy 注入',
+    tag: 'MULTI-LANG',
+    tagColor: 'var(--teal)',
+    userQuery: 'ผมซื้อสกิน Arena of Valor เมื่อ 10 วันก่อน อยากขอเงินคืนได้ไหม',
+    userQueryTranslation: '（中文翻译）我 10 天前买了 Arena of Valor 的皮肤，能申请退款吗？',
+    steps: [
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 语言检测',
+        tag: 'LANG',
+        body: '检测输入语言：<span class="code">th-TH</span>（泰语）<br>Player.region = TH（泰国服） · Device.os_language = th<br>→ 选择 <strong>东南亚语言适配器</strong>',
+        meta: ['detected: th-TH', 'adapter: sea_adapter', 'confidence: 0.98']
+      },
+      {
+        type: 'orchestrator',
+        label: 'Orchestrator · 意图识别',
+        tag: 'NLU',
+        body: '识别意图 <span class="code">refund_request</span>（退款申请），泰语 NLU 模型推理<br>抽取实体：购买时间 <strong>10 天前</strong>，商品 <strong>皮肤</strong>',
+        meta: ['latency: 240ms', 'confidence: 0.92']
+      },
+      {
+        type: 'domain-match',
+        label: '支付退款 Agent · 子图检索',
+        tag: 'GRAPH',
+        body: '检索订单记录：<br>・Order.created_at = 10 天前<br>・Order.product_type = SKIN<br>・Skin.is_used = false（未使用）',
+        meta: ['Neo4j 3跳查询', 'latency: 110ms'],
+        graphPath: ['Player', 'Order', 'Skin']
+      },
+      {
+        type: 'policy',
+        label: '⚡ 关键差异点：东南亚 Policy 注入',
+        tag: 'POLICY',
+        body: '<strong>这里是多语言的价值体现</strong>：<br>・国服退款期：<span style="color:var(--red)">7 天</span> → 10 天前已超期<br>・东南亚退款期：<span style="color:var(--teal)">14 天</span>（PDPA 合规要求）→ <strong>仍在有效期内</strong><br><br>规则继承链：Policy#REFUND_GLOBAL → 东南亚适配器 override: refund_days=14',
+        meta: ['override_field: refund_days', 'parent: GLOBAL', 'eligible: true']
+      },
+      {
+        type: 'domain-match',
+        label: '支付退款 Agent · 退款处理',
+        tag: 'RESOLVE',
+        body: '退款资格确认通过：<br>・距购买 10 天 < 14 天期限 ✓<br>・皮肤未使用 ✓<br>・支付渠道：TrueMoney（泰国本地）<br>提交退款工单，2-3 工作日到账',
+        meta: ['confidence: 0.93', 'escalate: false', 'channel: TrueMoney']
+      },
+      {
+        type: 'policy',
+        label: '东南亚适配器 · 回复生成',
+        tag: 'LANG',
+        body: '通过泰语适配器生成回复：<br>・使用泰语敬语格式（ครับ/ค่ะ 语气词）<br>・金额显示用泰铢（฿）<br>・工作时间按曼谷时区（GMT+7）',
+        meta: ['output_lang: th-TH', 'total_latency: 1.45s']
+      }
+    ],
+    reply: 'สวัสดีครับ! เราตรวจสอบคำสั่งซื้อของคุณแล้ว:\n\n**สถานะการขอเงินคืน**\n・วันที่ซื้อ: 10 วันก่อน (ยังอยู่ในช่วง 14 วัน) ✓\n・สกินยังไม่ได้ใช้ ✓\n・อนุมัติการคืนเงิน ✓\n\n**จำนวนเงินคืน**: ฿299 (ผ่าน TrueMoney)\n**เวลาคืนเงิน**: 2-3 วันทำการ\n\n(中文翻译：您好！订单已核验：10 天前购买仍在 14 天期限内，皮肤未使用，退款已批准。299 泰铢将在 2-3 工作日通过 TrueMoney 退回。)',
+    decision: {
+      title: '为什么语言适配器必须解耦？',
+      body: '<strong>同一个用户问题，答案完全相反</strong>——国服玩家 10 天前买的皮肤不能退，但泰国玩家可以。关键不在"翻译"，而在"规则继承"：全局 Policy 定义通用框架（<span class="code">refund_days: 7</span>），各区服适配器只存 override 字段（东南亚 <span class="code">refund_days: 14</span>）。规则变更时只改适配器，5 个专域 Agent 无需改动。',
+      tradeoff: '权衡：适配器层新增了维护成本——需要为每个语言区独立维护 Policy 版本、敬语规则、支付渠道列表。但如果不拆分，所有区服规则都堆在一个 Agent 里，System Prompt 会膨胀到 8000+ Token，而且任何一处法规更新都要 Diff 检查所有区服的规则冲突。东南亚 PDPA 和国服个保法的数据保留期不同，这类合规差异不能用 if-else 在代码里硬编码。'
+    }
+  }
+];
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let currentScenario = null;
+let currentStepIndex = -1;
+let autoPlayTimer = null;
+let isPlaying = false;
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+function init() {
+  renderScenarioList();
+}
+
+function switchMode(mode, btn) {
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.main').forEach(m => m.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mode-' + mode).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+// PANEL SUB-TABS (Steps ⇄ Graph)
+// ════════════════════════════════════════════════════════
+function switchPanelTab(tab, btn) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelector(`.panel-content[data-pcontent="${tab}"]`).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+// KNOWLEDGE GRAPH DATA (14 nodes, positioned on radial layout)
+// ════════════════════════════════════════════════════════
+// Radial layout: Player in center, others around
+// SVG viewBox: 0 0 600 440
+const GRAPH_NODES = {
+  Player:       { x: 300, y: 220, color: '#7F77DD', r: 24, label: 'Player',      group: 'core' },
+  Account:      { x: 170, y: 150, color: '#378ADD', r: 20, label: 'Account',     group: 'core' },
+  Match:        { x: 430, y: 150, color: '#BA7517', r: 20, label: 'Match',       group: 'behavior' },
+  Order:        { x: 430, y: 290, color: '#D85A30', r: 20, label: 'Order',       group: 'behavior' },
+  Device:       { x: 90,  y: 290, color: '#5F5E5A', r: 18, label: 'Device',      group: 'behavior' },
+  Hero:         { x: 520, y: 80,  color: '#1D9E75', r: 18, label: 'Hero',        group: 'content' },
+  Skin:         { x: 520, y: 220, color: '#D4537E', r: 18, label: 'Skin',        group: 'content' },
+  Season:       { x: 380, y: 50,  color: '#639922', r: 16, label: 'Season',      group: 'content' },
+  SeasonPass:   { x: 240, y: 50,  color: '#3B6D11', r: 16, label: 'SeasonPass',  group: 'content' },
+  Event:        { x: 100, y: 80,  color: '#854F0B', r: 16, label: 'Event',       group: 'content' },
+  Issue:        { x: 300, y: 380, color: '#E24B4A', r: 20, label: 'Issue',       group: 'ticket' },
+  Punishment:   { x: 170, y: 320, color: '#993C1D', r: 18, label: 'Punishment',  group: 'ticket' },
+  Compensation: { x: 430, y: 380, color: '#185FA5', r: 18, label: 'Compensation',group: 'ticket' },
+  Policy:       { x: 60,  y: 220, color: '#9b7fe8', r: 20, label: 'Policy',      group: 'rule' }
+};
+
+// Edges: [from, to, label]
+const GRAPH_EDGES = [
+  ['Player', 'Account', '拥有'],
+  ['Player', 'Match', '参与对局'],
+  ['Player', 'Order', '发起订单'],
+  ['Player', 'Device', '使用'],
+  ['Player', 'Issue', '提交工单'],
+  ['Account', 'Punishment', '关联惩罚'],
+  ['Account', 'Policy', '受约束'],
+  ['Match', 'Compensation', '触发补偿'],
+  ['Match', 'Hero', '使用英雄'],
+  ['Match', 'Issue', '触发工单'],
+  ['Order', 'Skin', '购买'],
+  ['Order', 'SeasonPass', '购买'],
+  ['Order', 'Issue', '支付问题'],
+  ['Hero', 'Skin', '拥有皮肤'],
+  ['Season', 'Hero', '包含'],
+  ['Season', 'SeasonPass', '关联'],
+  ['Event', 'Skin', '活动皮肤'],
+  ['Policy', 'Order', '退款规则'],
+  ['Policy', 'Match', '判负规则'],
+  ['Policy', 'Compensation', '补偿标准'],
+  ['Policy', 'Issue', 'SOP 规则'],
+  ['Punishment', 'Issue', '申诉'],
+  ['Issue', 'Compensation', '触发补偿']
+];
+
+function renderGraph(highlightPath = null) {
+  const container = document.getElementById('graph-container');
+  // Build SVG
+  const width = 600, height = 440;
+
+  // Determine edge highlights based on path [NodeA, NodeB, NodeC, ...]
+  const activeEdges = new Set();
+  const activeNodes = new Set();
+  if (highlightPath && highlightPath.length > 1) {
+    for (let i = 0; i < highlightPath.length - 1; i++) {
+      activeEdges.add(`${highlightPath[i]}-${highlightPath[i+1]}`);
+      activeEdges.add(`${highlightPath[i+1]}-${highlightPath[i]}`);
+      activeNodes.add(highlightPath[i]);
+      activeNodes.add(highlightPath[i+1]);
+    }
+  }
+
+  // Build edges SVG
+  let edgesHtml = '';
+  GRAPH_EDGES.forEach(([from, to, label]) => {
+    const n1 = GRAPH_NODES[from];
+    const n2 = GRAPH_NODES[to];
+    if (!n1 || !n2) return;
+    const key1 = `${from}-${to}`;
+    const isActive = activeEdges.has(key1);
+    const isDimmed = highlightPath && !isActive;
+    // Compute midpoint for label
+    const mx = (n1.x + n2.x) / 2;
+    const my = (n1.y + n2.y) / 2;
+    const cls = `graph-edge${isActive ? ' active' : ''}${isDimmed ? ' dimmed' : ''}`;
+    edgesHtml += `<line class="${cls}" x1="${n1.x}" y1="${n1.y}" x2="${n2.x}" y2="${n2.y}"/>`;
+    if (isActive) {
+      edgesHtml += `<text class="graph-edge-label active" x="${mx}" y="${my - 4}" text-anchor="middle">${label}</text>`;
+    }
+  });
+
+  // Build nodes SVG
+  let nodesHtml = '';
+  Object.entries(GRAPH_NODES).forEach(([id, node]) => {
+    const isActive = activeNodes.has(id);
+    const isDimmed = highlightPath && !isActive;
+    const cls = `graph-node${isActive ? ' active' : ''}${isDimmed ? ' dimmed' : ''}`;
+    const stroke = isActive ? '#f0c040' : 'rgba(255,255,255,0.15)';
+    const strokeWidth = isActive ? 2.5 : 1;
+    nodesHtml += `<g class="${cls}" style="color:${node.color}">
+      <circle cx="${node.x}" cy="${node.y}" r="${node.r}" fill="${node.color}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="0.85"/>
+      <text x="${node.x}" y="${node.y + node.r + 14}">${node.label}</text>
+    </g>`;
+  });
+
+  // Query info header
+  let queryInfo = '';
+  if (highlightPath && highlightPath.length > 1) {
+    queryInfo = `<div class="graph-query-info">
+      <span class="label">多跳查询路径</span>
+      <span class="path">${highlightPath.join(' → ')}</span>
+      <span style="margin-left:12px; color:var(--text3)">${highlightPath.length - 1} 跳</span>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    ${queryInfo}
+    <div class="graph-svg-wrap">
+      <svg class="graph-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+        ${edgesHtml}
+        ${nodesHtml}
+      </svg>
+    </div>
+    <div class="graph-legend">
+      <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#7F77DD"></div>核心实体</div>
+      <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#1D9E75"></div>游戏内容</div>
+      <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#BA7517"></div>行为记录</div>
+      <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#E24B4A"></div>工单处理</div>
+      <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#9b7fe8"></div>规则约束</div>
+    </div>
+  `;
+}
+
+// Render empty graph initially
+function renderEmptyGraph() {
+  const container = document.getElementById('graph-container');
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="icon">🕸️</div>
+      <div class="msg">场景执行到图谱检索步骤时，这里会实时展示多跳推理路径</div>
+      <div class="sub">14 节点知识图谱 · 高亮查询经过的节点与边</div>
+    </div>
+  `;
+}
+
+function renderScenarioList() {
+  const container = document.getElementById('scenario-list');
+  container.innerHTML = SCENARIOS.map((s, i) => `
+    <button class="scenario-btn" data-index="${i}" onclick="loadScenario(${i}, this)">
+      <div class="sc-title">${s.title}</div>
+      <div class="sc-desc">${s.desc}</div>
+      <span class="sc-tag" style="background:${hexToRgba(s.tagColor)};color:${s.tagColor}">${s.tag}</span>
+    </button>
+  `).join('');
+}
+
+function hexToRgba(cssVar) {
+  const map = {
+    'var(--blue)': 'rgba(74,158,255,.15)',
+    'var(--gold)': 'rgba(240,192,64,.15)',
+    'var(--red)':  'rgba(232,64,64,.15)',
+    'var(--teal)': 'rgba(61,204,160,.15)'
+  };
+  return map[cssVar] || 'rgba(255,255,255,.1)';
+}
+
+// ════════════════════════════════════════════════════════
+// SCENARIO LOADING
+// ════════════════════════════════════════════════════════
+function loadScenario(index, btn) {
+  stopAutoPlay();
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  currentScenario = SCENARIOS[index];
+  currentStepIndex = -1;
+
+  // Reset panels
+  const chatMessages = document.getElementById('chat-messages');
+  const thinkingSteps = document.getElementById('thinking-steps');
+  const designContainer = document.getElementById('design-card-container');
+
+  chatMessages.innerHTML = '';
+  thinkingSteps.innerHTML = '';
+  designContainer.innerHTML = '';
+
+  // Reset graph to empty
+  renderEmptyGraph();
+
+  // Add user message (with translation for multilingual scenarios)
+  addUserMessage(currentScenario.userQuery, currentScenario.userQueryTranslation);
+
+  // Update meta
+  document.getElementById('chat-meta').textContent = currentScenario.tag;
+  document.getElementById('thinking-meta').textContent = '准备执行 · 0/' + currentScenario.steps.length;
+  updateStepIndicator();
+
+  // Enable controls
+  document.getElementById('next-step-btn').disabled = false;
+  document.getElementById('prev-step-btn').disabled = true;
+  document.getElementById('auto-btn').disabled = false;
+}
+
+function addUserMessage(text, translation) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  let bubbleContent = escapeHtml(text);
+  if (translation) {
+    bubbleContent += `<span class="tip">${escapeHtml(translation)}</span>`;
+  }
+  div.innerHTML = `<div class="msg-bubble">${bubbleContent}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addAgentMessage(text) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.innerHTML = `<div class="msg-bubble">${formatAgentReply(text)}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatAgentReply(text) {
+  // Convert **bold** to <strong> and \n to <br>
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ════════════════════════════════════════════════════════
+// STEP EXECUTION
+// ════════════════════════════════════════════════════════
+function nextStep() {
+  if (!currentScenario) return;
+
+  currentStepIndex++;
+  const totalSteps = currentScenario.steps.length;
+
+  if (currentStepIndex < totalSteps) {
+    renderStep(currentScenario.steps[currentStepIndex]);
+    document.getElementById('thinking-meta').textContent =
+      `执行中 · ${currentStepIndex + 1}/${totalSteps}`;
+    document.getElementById('prev-step-btn').disabled = false;
+
+    if (currentStepIndex === totalSteps - 1) {
+      // Last step - next click will show reply
+    }
+  } else if (currentStepIndex === totalSteps) {
+    // Show final reply
+    showFinalReply();
+    document.getElementById('next-step-btn').disabled = true;
+    document.getElementById('thinking-meta').textContent =
+      `完成 · ${totalSteps}/${totalSteps}`;
+    stopAutoPlay();
+  }
+
+  updateStepIndicator();
+}
+
+function prevStep() {
+  if (currentStepIndex <= 0) return;
+
+  const thinkingSteps = document.getElementById('thinking-steps');
+  const lastStep = thinkingSteps.lastElementChild;
+  if (lastStep) lastStep.remove();
+
+  currentStepIndex--;
+
+  // Remove agent reply if we went back before last step
+  if (currentStepIndex < currentScenario.steps.length - 1) {
+    const chatMessages = document.getElementById('chat-messages');
+    const agentMsgs = chatMessages.querySelectorAll('.msg.agent');
+    if (agentMsgs.length > 0) {
+      agentMsgs[agentMsgs.length - 1].remove();
+    }
+    document.getElementById('design-card-container').innerHTML = '';
+    document.getElementById('next-step-btn').disabled = false;
+  }
+
+  // Mark current last step as active
+  const steps = thinkingSteps.querySelectorAll('.think-step');
+  steps.forEach(s => s.classList.remove('active', 'done'));
+  if (steps.length > 0) {
+    steps[steps.length - 1].classList.add('active');
+  }
+
+  document.getElementById('thinking-meta').textContent =
+    `执行中 · ${currentStepIndex + 1}/${currentScenario.steps.length}`;
+  document.getElementById('prev-step-btn').disabled = currentStepIndex <= 0;
+  updateStepIndicator();
+
+  // Re-render graph to reflect state at new current step:
+  // find the most recent graphPath at or before currentStepIndex
+  let latestPath = null;
+  for (let i = currentStepIndex; i >= 0; i--) {
+    if (currentScenario.steps[i] && currentScenario.steps[i].graphPath) {
+      latestPath = currentScenario.steps[i].graphPath;
+      break;
+    }
+  }
+  if (latestPath) {
+    renderGraph(latestPath);
+  } else {
+    renderEmptyGraph();
+  }
+}
+
+function renderStep(step) {
+  const container = document.getElementById('thinking-steps');
+
+  // Empty state removal
+  const emptyState = container.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  // Mark previous steps as done
+  container.querySelectorAll('.think-step').forEach(s => {
+    s.classList.remove('active');
+    s.classList.add('done');
+  });
+
+  const stepDiv = document.createElement('div');
+
+  if (step.type === 'parallel') {
+    stepDiv.className = 'think-step parallel-group active';
+    stepDiv.innerHTML = step.agents.map(a => renderParallelAgent(a)).join('');
+  } else {
+    stepDiv.className = 'think-step active';
+    const tagClass = getTagClass(step.type);
+    stepDiv.innerHTML = `
+      <div class="think-step-head">
+        <span class="step-num">${String(currentStepIndex + 1).padStart(2, '0')}</span>
+        <span class="step-label">${step.label}</span>
+        <span class="step-tag ${tagClass}">${step.tag}</span>
+      </div>
+      <div class="step-body">${step.body}</div>
+      ${step.meta ? `<div class="step-meta">${step.meta.map(m => {
+        let cls = '';
+        if (step.metaClass === 'error-text') cls = 'error-text';
+        else if (step.metaClass === 'warning-text') cls = 'highlight';
+        return `<span class="${cls}">${m}</span>`;
+      }).join('')}</div>` : ''}
+    `;
+  }
+
+  container.appendChild(stepDiv);
+  // Scroll the new step into view within the panel only (not the page)
+  requestAnimationFrame(() => {
+    stepDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    // Fallback: ensure we scroll to bottom of thinking panel
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  });
+
+  // If this step has a graphPath, update the knowledge graph visualization
+  // and briefly indicate the graph tab has new content
+  if (step.graphPath && step.graphPath.length > 1) {
+    renderGraph(step.graphPath);
+    flashGraphTab();
+  }
+}
+
+// Visually nudge the graph tab when new path appears
+function flashGraphTab() {
+  const graphTab = document.querySelector('.panel-tab[data-ptab="graph"]');
+  if (!graphTab) return;
+  graphTab.classList.add('flash');
+  setTimeout(() => graphTab.classList.remove('flash'), 1400);
+}
+
+function renderParallelAgent(agent) {
+  const typeClass = 'agent-' + agent.type;
+  return `
+    <div class="parallel-agent ${typeClass}">
+      <div class="pa-head">${agent.name}</div>
+      <div class="pa-status">${agent.status}</div>
+      <div class="pa-body">${agent.body}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${agent.progress}%"></div></div>
+      <div class="step-meta" style="margin-top:6px">
+        <span class="highlight">conf: ${agent.result.confidence}</span>
+        <span>${agent.result.latency}ms</span>
+        <span class="success-text">${agent.result.resolution}</span>
+      </div>
+    </div>
+  `;
+}
+
+function getTagClass(type) {
+  if (type === 'orchestrator') return 'orchestrator';
+  if (type === 'policy') return 'policy';
+  if (type && type.startsWith('domain-')) return 'domain';
+  return 'external';
+}
+
+function showFinalReply() {
+  // Show typing indicator first
+  const container = document.getElementById('chat-messages');
+  const typing = document.createElement('div');
+  typing.className = 'msg agent';
+  typing.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    addAgentMessage(currentScenario.reply);
+
+    // Show design decision card
+    setTimeout(() => {
+      showDesignCard(currentScenario.decision);
+    }, 400);
+  }, 700);
+}
+
+function showDesignCard(decision) {
+  const container = document.getElementById('design-card-container');
+  container.innerHTML = `
+    <div class="design-card">
+      <h4>设计决策 · ${decision.title}</h4>
+      <div class="decision-body">${decision.body}</div>
+      <div class="tradeoff"><strong>权衡：</strong>${decision.tradeoff.replace(/^权衡：/, '')}</div>
+    </div>
+  `;
+}
+
+function updateStepIndicator() {
+  const indicator = document.getElementById('step-indicator');
+  const progress = document.getElementById('step-progress');
+  const fill = document.getElementById('step-progress-fill');
+
+  if (!currentScenario) {
+    indicator.textContent = '— / —';
+    fill.style.width = '0%';
+    progress.classList.add('empty');
+    progress.classList.remove('complete');
+    return;
+  }
+  progress.classList.remove('empty');
+  const total = currentScenario.steps.length;
+  if (currentStepIndex < 0) {
+    indicator.textContent = `0 / ${total}`;
+    fill.style.width = '0%';
+    progress.classList.remove('complete');
+  } else if (currentStepIndex >= total) {
+    indicator.textContent = `${total} / ${total}`;
+    fill.style.width = '100%';
+    progress.classList.add('complete');
+  } else {
+    indicator.textContent = `${currentStepIndex + 1} / ${total}`;
+    const pct = ((currentStepIndex + 1) / total) * 100;
+    fill.style.width = pct + '%';
+    progress.classList.remove('complete');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// AUTO PLAY
+// ════════════════════════════════════════════════════════
+function toggleAutoPlay() {
+  if (isPlaying) {
+    stopAutoPlay();
+  } else {
+    startAutoPlay();
+  }
+}
+
+function startAutoPlay() {
+  if (!currentScenario) return;
+  isPlaying = true;
+  const btn = document.getElementById('auto-btn');
+  const label = document.getElementById('auto-btn-label');
+  btn.classList.add('playing');
+  label.textContent = '暂停';
+  // Swap play icon to pause icon
+  btn.querySelector('svg').innerHTML = '<path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/>';
+
+  const tick = () => {
+    if (!isPlaying) return;
+    if (currentStepIndex >= currentScenario.steps.length) {
+      stopAutoPlay();
+      return;
+    }
+    nextStep();
+    autoPlayTimer = setTimeout(tick, 1600);
+  };
+  tick();
+}
+
+function stopAutoPlay() {
+  isPlaying = false;
+  if (autoPlayTimer) clearTimeout(autoPlayTimer);
+  autoPlayTimer = null;
+  const btn = document.getElementById('auto-btn');
+  const label = document.getElementById('auto-btn-label');
+  if (btn) {
+    btn.classList.remove('playing');
+    if (label) label.textContent = '自动播放';
+    // Restore play icon
+    const svg = btn.querySelector('svg');
+    if (svg) svg.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
+
+function resetScenario() {
+  stopAutoPlay();
+  if (!currentScenario) return;
+
+  const idx = SCENARIOS.findIndex(s => s.id === currentScenario.id);
+  const btn = document.querySelector(`.scenario-btn[data-index="${idx}"]`);
+  loadScenario(idx, btn);
+}
+
+// ════════════════════════════════════════════════════════
+// EVENT WIRING
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('next-step-btn').addEventListener('click', nextStep);
+  document.getElementById('prev-step-btn').addEventListener('click', prevStep);
+  document.getElementById('auto-btn').addEventListener('click', toggleAutoPlay);
+  document.getElementById('reset-btn').addEventListener('click', resetScenario);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      if (!document.getElementById('next-step-btn').disabled) nextStep();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (!document.getElementById('prev-step-btn').disabled) prevStep();
+    } else if (e.key === 'r' || e.key === 'R') {
+      resetScenario();
+    }
+  });
+});
+</script>
+
+</body>
+</html>
