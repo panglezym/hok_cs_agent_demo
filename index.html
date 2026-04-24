@@ -3,58 +3,328 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>王者荣耀 · 智能客服 Agent · 交互演示</title>
+<title>王者荣耀 · 智能客服 Agent 设计文档 v4.0 · 含交互演示</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
   :root {
     --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e28;--bg4:#212638;
     --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
     --text:#e8eaf0;--text2:#9ba3b8;--text3:#5d6478;
-    --gold:#f0c040;--blue:#4a9eff;--teal:#3dcca0;--purple:#9b7fe8;
-    --coral:#f07050;--pink:#e060a0;--green:#6abf50;
-    --amber:#e8a030;--red:#e84040;
+    --gold:#f0c040;--gold2:#c8973a;--blue:#4a9eff;--blue2:#1e5fa8;
+    --teal:#3dcca0;--teal2:#0f7a5a;--purple:#9b7fe8;--purple2:#4a3880;
+    --coral:#f07050;--coral2:#8a3820;--pink:#e060a0;--green:#6abf50;
+    --amber:#e8a030;--red:#e84040;--gray:#707888;
     --radius:8px;--radius-lg:12px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    background: var(--bg); color: var(--text); font-size: 14px;
-    line-height: 1.6; min-height: 100vh; overflow-x: hidden;
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+  .header{background:var(--bg2);border-bottom:1px solid var(--border2);padding:16px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+  .header-badge{background:var(--gold);color:#1a1000;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.06em}
+  .header h1{font-size:15px;font-weight:500;flex:1}
+  .header-meta{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+  .nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto;position:sticky;top:53px;z-index:99}
+  .nav-tab{padding:10px 15px;font-size:13px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none}
+  .nav-tab:hover{color:var(--text2)}
+  .nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .view{display:none;padding:24px 28px}
+  .view.active{display:block}
+  .section-header{margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .section-header h2{font-size:18px;font-weight:500;margin-bottom:4px}
+  .section-header p{font-size:13px;color:var(--text2)}
+  .kg-layout{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
+  .node-sidebar{display:flex;flex-direction:column;gap:4px;position:sticky;top:100px;max-height:calc(100vh - 120px);overflow-y:auto}
+  .sidebar-group-label{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:8px 6px 4px}
+  .node-btn{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);border:1px solid transparent;background:none;cursor:pointer;transition:all .15s;text-align:left;width:100%}
+  .node-btn:hover{background:var(--bg3);border-color:var(--border)}
+  .node-btn.active{background:var(--bg3);border-color:var(--border2)}
+  .node-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .node-btn-text .name{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+  .node-btn-text .sub{font-size:11px;color:var(--text3);margin-top:1px}
+  .detail-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .detail-hero{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px}
+  .detail-icon-wrap{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid var(--border2)}
+  .detail-hero-text .node-type{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+  .detail-hero-text h3{font-size:16px;font-weight:500;margin-bottom:4px}
+  .detail-hero-text .node-desc{font-size:12px;color:var(--text2);line-height:1.6}
+  .detail-body{padding:16px 20px}
+  .block-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;margin-top:16px;display:flex;align-items:center;gap:6px}
+  .block-label:first-child{margin-top:0}
+  .block-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .props-table{width:100%;border-collapse:collapse}
+  .props-table tr{border-bottom:1px solid var(--border)}
+  .props-table tr:last-child{border-bottom:none}
+  .props-table td{padding:6px 4px;vertical-align:top}
+  .prop-name{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);white-space:nowrap;padding-right:12px;width:1%}
+  .prop-type-badge{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);background:rgba(61,204,160,.08);padding:2px 6px;border-radius:4px;white-space:nowrap;width:1%;padding-right:12px}
+  .prop-desc{font-size:12px;color:var(--text2)}
+  .prop-enum{font-size:11px;color:var(--text3);margin-top:2px;font-style:italic}
+  .rel-grid{display:flex;flex-direction:column;gap:5px}
+  .rel-card{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+  .rel-dir{font-size:10px;padding:2px 5px;border-radius:3px;font-weight:500;flex-shrink:0}
+  .rel-dir.out{background:rgba(74,158,255,.15);color:var(--blue)}
+  .rel-dir.in{background:rgba(61,204,160,.1);color:var(--teal)}
+  .rel-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .rel-target{font-size:12px;font-weight:500;flex:1}
+  .rel-name-badge{font-size:11px;font-weight:500;flex-shrink:0}
+  .rel-cardinality{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+  .tag-list{display:flex;flex-wrap:wrap;gap:5px}
+  .idx-tag{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(240,192,64,.1);color:var(--gold);border:1px solid rgba(240,192,64,.2)}
+  .scene-tag{font-size:12px;padding:4px 10px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+  .empty-state{padding:48px 20px;text-align:center;color:var(--text3);font-size:13px}
+  /* AGENT */
+  .agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+  .agent-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+  .agent-card h4{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .agent-card h4 .tag{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;letter-spacing:.04em}
+  .layer-items{display:flex;flex-direction:column;gap:5px}
+  .layer-item{padding:7px 10px;background:var(--bg3);border-radius:6px;border-left:2px solid}
+  .layer-item .item-name{font-size:12px;font-weight:500;margin-bottom:2px}
+  .layer-item .item-desc{font-size:11px;color:var(--text2)}
+  .pipeline{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:14px}
+  .pipeline h4{font-size:13px;font-weight:500;margin-bottom:12px}
+  .pipeline-steps{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding-bottom:4px}
+  .p-step{flex:1;min-width:90px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center;position:relative}
+  .p-step:not(:last-child)::after{content:'→';position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;z-index:1}
+  .p-step+.p-step{margin-left:14px}
+  .p-step .p-num{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+  .p-step .p-name{font-size:12px;font-weight:500}
+  .p-step .p-sub{font-size:11px;color:var(--text2);margin-top:3px}
+  /* INTENT */
+  .intent-grid{display:flex;flex-direction:column;gap:12px}
+  .intent-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .intent-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .intent-color{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+  .intent-header h4{font-size:14px;font-weight:500;flex:1}
+  .intent-count{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+  .intent-body{padding:12px 16px}
+  .slots-table{width:100%;border-collapse:collapse;margin-bottom:10px}
+  .slots-table th{font-size:10px;color:var(--text3);text-align:left;padding:4px 6px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+  .slots-table td{padding:5px 6px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top}
+  .slots-table td:first-child{font-family:'JetBrains Mono',monospace;color:var(--blue)}
+  .slots-table td:nth-child(2){color:var(--teal);font-family:'JetBrains Mono',monospace;font-size:11px}
+  .slots-table td:nth-child(3){color:var(--text2)}
+  .required-badge{font-size:10px;background:rgba(232,64,64,.15);color:var(--red);padding:1px 5px;border-radius:3px}
+  .optional-badge{font-size:10px;background:rgba(255,255,255,.05);color:var(--text3);padding:1px 5px;border-radius:3px}
+  .sub-intents{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .sub-tag{font-size:11px;padding:3px 9px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+  /* FLOW */
+  .flow-section{margin-bottom:24px}
+  .flow-section h3{font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+  .flow-section h3::before{content:'';width:3px;height:14px;background:var(--gold);border-radius:2px}
+  .decision-tree{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+  .dt-row{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+  .dt-cond{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;min-width:180px;flex-shrink:0}
+  .dt-cond .cond-if{font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:500;letter-spacing:.05em}
+  .dt-cond .cond-val{font-weight:500;margin-top:2px}
+  .dt-arrow{color:var(--text3);font-size:14px;padding-top:10px;flex-shrink:0}
+  .dt-action{flex:1;display:flex;flex-wrap:wrap;gap:5px;padding-top:4px}
+  .dt-act-item{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text2)}
+  .dt-act-item.highlight{background:rgba(240,192,64,.1);border-color:rgba(240,192,64,.2);color:var(--gold)}
+  .dt-act-item.danger{background:rgba(232,64,64,.1);border-color:rgba(232,64,64,.2);color:var(--red)}
+  .compensation-table{width:100%;border-collapse:collapse}
+  .compensation-table th{font-size:10px;color:var(--text3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+  .compensation-table td{padding:7px 8px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);vertical-align:top}
+  .compensation-table td:first-child{color:var(--text);font-weight:500}
+  /* CACHE */
+  .cache-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+  .cache-tier{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .cache-tier-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .cache-tier-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.05em}
+  .cache-tier-title{font-size:13px;font-weight:500}
+  .cache-tier-latency{font-size:11px;font-family:'JetBrains Mono',monospace;margin-left:auto}
+  .cache-node-item{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .cache-node-item:last-child{border-bottom:none}
+  .cache-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+  .cache-node-name{font-size:12px;font-weight:500;color:var(--text)}
+  .cache-node-desc{font-size:11px;color:var(--text3);margin-top:1px}
+  .cache-node-ttl{font-size:10px;font-family:'JetBrains Mono',monospace;margin-top:2px}
+  /* STATE MACHINE */
+  .state-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .state-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .state-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .state-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .state-name{font-size:13px;font-weight:500}
+  .state-desc{font-size:11px;color:var(--text2);margin-top:2px;padding-left:18px}
+  .transition-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .trans-item{font-size:11px;padding:5px 8px;background:var(--bg3);border-radius:5px;border:1px solid var(--border);color:var(--text2)}
+  .trans-item .trans-trigger{color:var(--teal);font-weight:500}
+  .trans-item .trans-target{color:var(--gold)}
+  .ask-policy-table{width:100%;border-collapse:collapse;margin-top:8px}
+  .ask-policy-table th{font-size:10px;color:var(--text3);text-align:left;padding:5px 6px;border-bottom:1px solid var(--border);text-transform:uppercase;font-weight:500;letter-spacing:.05em}
+  .ask-policy-table td{padding:5px 6px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2)}
+  .ask-policy-table td:first-child{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px}
+  /* UPDATE MECHANISM */
+  .update-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .update-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .update-card h4{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .freq-badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500}
+  .update-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:flex-start}
+  .update-row:last-child{border-bottom:none}
+  .update-field{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);min-width:130px;flex-shrink:0}
+  .update-who{font-size:11px;color:var(--teal);min-width:80px;flex-shrink:0}
+  .update-delay{font-family:'JetBrains Mono',monospace;font-size:11px;flex-shrink:0;min-width:60px}
+  .update-how{font-size:11px;color:var(--text2)}
+  /* FALLBACK */
+  .fallback-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .fallback-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .fallback-card h4{font-size:13px;font-weight:500;margin-bottom:10px}
+  .conf-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .conf-range{font-family:'JetBrains Mono',monospace;font-size:11px;min-width:80px;color:var(--text2)}
+  .conf-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+  .conf-bar{height:100%;border-radius:3px}
+  .conf-label{font-size:11px;min-width:90px;text-align:right}
+  .degradation-steps{display:flex;flex-direction:column;gap:5px}
+  .deg-step{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+  .deg-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);min-width:20px;flex-shrink:0;padding-top:1px}
+  .deg-content .deg-title{font-size:12px;font-weight:500}
+  .deg-content .deg-desc{font-size:11px;color:var(--text2);margin-top:1px}
+  /* FLYWHEEL */
+  .flywheel-timeline{display:flex;flex-direction:column;gap:0;margin-bottom:16px}
+  .fw-step{display:flex;gap:14px;position:relative}
+  .fw-step:not(:last-child)::after{content:'';position:absolute;left:17px;top:38px;width:1px;height:calc(100% - 8px);background:var(--border2)}
+  .fw-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:1px solid var(--border2);background:var(--bg3);z-index:1}
+  .fw-body{flex:1;padding:4px 0 20px}
+  .fw-title{font-size:13px;font-weight:500;margin-bottom:4px}
+  .fw-desc{font-size:12px;color:var(--text2);line-height:1.6}
+  .fw-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  .fw-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)}
+  .pipeline-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .pd-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px}
+  .pd-card h5{font-size:12px;font-weight:500;margin-bottom:7px;color:var(--text2)}
+  .pd-item{font-size:11px;color:var(--text2);padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:6px}
+  .pd-item:last-child{border-bottom:none}
+  .pd-item::before{content:'·';color:var(--text3)}
+  /* MONITOR */
+  .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .metric-val{font-size:24px;font-weight:500;margin-bottom:3px}
+  .metric-label{font-size:11px;color:var(--text2)}
+  .metric-trend{font-size:10px;margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .alert-table{width:100%;border-collapse:collapse}
+  .alert-table th{font-size:10px;color:var(--text3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+  .alert-table td{padding:7px 8px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);vertical-align:top}
+  .alert-table td:first-child{color:var(--text);font-weight:500}
+  .sev-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500}
+  .sev-p0{background:rgba(232,64,64,.2);color:#ff6060}
+  .sev-p1{background:rgba(240,192,64,.15);color:var(--gold)}
+  .sev-p2{background:rgba(74,158,255,.15);color:var(--blue)}
+  .sev-p3{background:rgba(255,255,255,.08);color:var(--text3)}
+  .monitor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .monitor-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .monitor-card h4{font-size:13px;font-weight:500;margin-bottom:10px}
+  .kpi-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .kpi-row:last-child{border-bottom:none}
+  .kpi-name{font-size:12px;color:var(--text2)}
+  .kpi-val{font-size:12px;font-weight:500;font-family:'JetBrains Mono',monospace}
+  .kpi-target{font-size:11px;color:var(--text3)}
+  /* I18N */
+  .lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .lang-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .lang-card h4{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .lang-badge{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500}
+  .lang-table{width:100%;border-collapse:collapse}
+  .lang-table th{font-size:10px;color:var(--text3);text-align:left;padding:5px 6px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+  .lang-table td{padding:5px 6px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2);vertical-align:top}
+  .lang-table td:first-child{color:var(--text);font-weight:500;min-width:80px}
+  .lang-table td:nth-child(2){font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);min-width:70px}
+  /* PRIVACY */
+  .privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .privacy-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .privacy-card h4{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .perm-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .perm-row:last-child{border-bottom:none}
+  .perm-role{font-size:11px;font-weight:500;min-width:80px;flex-shrink:0;padding-top:1px}
+  .perm-scope{font-size:11px;color:var(--text2);flex:1}
+  .perm-level{font-size:10px;padding:2px 6px;border-radius:3px;flex-shrink:0}
+  .perm-full{background:rgba(232,64,64,.15);color:#ff7070}
+  .perm-partial{background:rgba(240,192,64,.12);color:var(--gold)}
+  .perm-read{background:rgba(74,158,255,.12);color:var(--blue)}
+  .perm-none{background:rgba(255,255,255,.06);color:var(--text3)}
+  /* PROACTIVE */
+  .proactive-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+  .proactive-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .proactive-card h4{font-size:13px;font-weight:500;margin-bottom:10px}
+  .trigger-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .trigger-item:last-child{border-bottom:none}
+  .trigger-name{font-size:12px;font-weight:500;margin-bottom:2px}
+  .trigger-cond{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:2px}
+  .trigger-action{font-size:11px;color:var(--text2)}
+  /* PERSONA */
+  .persona-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .persona-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .persona-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .persona-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .persona-name{font-size:13px;font-weight:500}
+  .persona-desc{font-size:11px;color:var(--text2);margin-top:1px}
+  .persona-body{padding:10px 14px}
+  .persona-rule{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+  .persona-rule:last-child{border-bottom:none}
+  .persona-rule-key{font-size:11px;color:var(--text3);min-width:55px;flex-shrink:0}
+  .persona-rule-val{font-size:11px;color:var(--text2)}
+  /* AB TEST */
+  .ab-section{margin-bottom:20px}
+  .ab-section h3{font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px}
+  .ab-section h3::before{content:'';width:3px;height:14px;background:var(--purple);border-radius:2px}
+  .ab-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .ab-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .ab-card h4{font-size:13px;font-weight:500;margin-bottom:10px}
+  .exp-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:flex-start}
+  .exp-row:last-child{border-bottom:none}
+  .exp-key{font-size:11px;color:var(--text3);min-width:80px;flex-shrink:0}
+  .exp-val{font-size:12px;color:var(--text2)}
+  .exp-val code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal);background:rgba(61,204,160,.08);padding:1px 5px;border-radius:3px}
+  /* COST */
+  .cost-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+  .cost-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .cost-card h4{font-size:13px;font-weight:500;margin-bottom:10px}
+  .cost-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .cost-row:last-child{border-bottom:none}
+  .cost-label{font-size:12px;color:var(--text2);flex:1}
+  .cost-val{font-size:12px;font-weight:500;font-family:'JetBrains Mono',monospace;text-align:right;min-width:80px}
+  /* RELATION GRAPH */
+  .rel-overview-table{width:100%;border-collapse:collapse}
+  .rel-overview-table th{font-size:10px;color:var(--text3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap}
+  .rel-overview-table td{padding:6px 8px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+  .rel-overview-table tr:hover td{background:rgba(255,255,255,.02)}
+  .rel-from{font-family:'JetBrains Mono',monospace;font-size:11px;white-space:nowrap}
+  .rel-name-col{font-weight:500;white-space:nowrap}
+  .rel-to{font-family:'JetBrains Mono',monospace;font-size:11px;white-space:nowrap}
+  .rel-card-col{font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 5px;border-radius:3px;background:rgba(255,255,255,.06);color:var(--text2);white-space:nowrap}
+  .rel-type-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:500;white-space:nowrap}
+  .rel-type-owns{background:rgba(61,204,160,.1);color:var(--teal)}
+  .rel-type-behav{background:rgba(74,158,255,.1);color:var(--blue)}
+  .rel-type-rule{background:rgba(155,127,232,.1);color:var(--purple)}
+  .rel-type-ticket{background:rgba(240,112,80,.1);color:var(--coral)}
+  .rel-purpose{font-size:11px;color:var(--text2)}
+  .matrix-wrap{overflow-x:auto;margin-bottom:16px}
+  .matrix-table{border-collapse:collapse;font-size:11px;min-width:600px}
+  .matrix-table th{padding:6px 8px;background:var(--bg3);border:1px solid var(--border);font-weight:500;font-size:10px;white-space:nowrap;text-align:center}
+  .matrix-table td{padding:5px 8px;border:1px solid var(--border);text-align:center;vertical-align:middle}
+  .matrix-table .row-header{text-align:left;font-weight:500;font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg3);white-space:nowrap}
+  .matrix-cell-strong{background:rgba(240,192,64,.15);color:var(--gold);font-size:10px;font-weight:500;border-radius:3px;padding:2px 4px}
+  .matrix-cell-weak{background:rgba(74,158,255,.08);color:var(--blue);font-size:10px;border-radius:3px;padding:2px 4px}
+  .matrix-cell-none{color:var(--text3);font-size:11px}
+  .domain-section{margin-bottom:20px}
+  .domain-header{font-size:13px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px;color:var(--text2)}
+  .domain-header::before{content:'';width:3px;height:14px;border-radius:2px}
+  .hop-path-list{display:flex;flex-direction:column;gap:6px}
+  .hop-path{display:flex;align-items:center;gap:0;flex-wrap:wrap;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+  .hop-node{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;padding:3px 8px;border-radius:4px}
+  .hop-edge{font-size:11px;color:var(--text3);padding:0 6px;display:flex;align-items:center;gap:2px}
+  .hop-edge span{font-style:italic}
+  .hop-purpose{font-size:11px;color:var(--text2);margin-left:auto;padding-left:12px}
+  @media(max-width:700px){
+    .kg-layout,.agent-grid,.cache-grid,.state-grid,.update-grid,.fallback-grid,.pipeline-detail,.monitor-grid,.metric-grid,.lang-grid,.privacy-grid,.proactive-grid,.persona-grid,.ab-grid,.cost-grid{grid-template-columns:1fr}
+    .node-sidebar{position:static;display:grid;grid-template-columns:1fr 1fr}
+    .header{padding:12px 16px}
+    .view{padding:16px}
+    .nav{padding:0 16px}
   }
-  /* ═══ HEADER ═══ */
-  .header {
-    background: var(--bg2); border-bottom: 1px solid var(--border2);
-    padding: 14px 24px; display: flex; align-items: center; gap: 14px;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .header-badge {
-    background: var(--gold); color: #1a1000; font-size: 10px; font-weight: 700;
-    padding: 3px 8px; border-radius: 4px; letter-spacing: .06em;
-  }
-  .header h1 { font-size: 15px; font-weight: 500; flex: 1; }
-  .header-meta { font-size: 12px; color: var(--text3); font-family: 'SF Mono', monospace; }
 
-  /* ═══ MODE TABS ═══ */
-  .mode-tabs {
-    background: var(--bg2); border-bottom: 1px solid var(--border);
-    padding: 0 24px; display: flex; gap: 2px;
-    position: sticky; top: 51px; z-index: 99;
-  }
-  .mode-tab {
-    padding: 10px 18px; font-size: 13px; color: var(--text3);
-    cursor: pointer; border-bottom: 2px solid transparent;
-    background: none; border-top: none; border-left: none; border-right: none;
-    font-family: inherit; transition: all .2s;
-  }
-  .mode-tab:hover { color: var(--text2); }
-  .mode-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-  /* ═══ MAIN LAYOUT ═══ */
-  .main { padding: 16px 24px; display: none; }
-  .main.active { display: block; }
-
-  /* ═══ DEMO MODE ═══ */
-  /* Fixed-height layout: both columns fit the viewport exactly; inner panels handle their own scroll */
-  .demo-layout {
+  /* ═══════════════════════════════════════════════
+     DEMO-SPECIFIC STYLES (from demo.html)
+     ═══════════════════════════════════════════════ */
+#view-demo .demo-layout {
     display: grid; grid-template-columns: 1fr 1.15fr; gap: 14px;
     height: calc(100vh - 120px);
   }
@@ -420,7 +690,7 @@
   .design-card .tradeoff strong { color: var(--amber); font-weight: 500; }
 
   /* ═══ ARCHITECTURE MODE ═══ */
-  #mode-arch { padding: 24px 24px 40px; }
+  #view-archdemo { padding: 24px 24px 40px; }
   .arch-container {
     max-width: 1240px; margin: 0 auto;
     display: flex; flex-direction: column; gap: 20px;
@@ -670,14 +940,14 @@
   }
 
   /* ═══ EMPTY STATES ═══ */
-  .empty-state {
+  #view-demo .empty-state, #view-archdemo .empty-state {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     color: var(--text3); padding: 40px 20px; text-align: center;
   }
-  .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .5; }
-  .empty-state .msg { font-size: 13px; margin-bottom: 4px; }
-  .empty-state .sub { font-size: 11px; color: var(--text3); }
+  #view-demo .empty-state .icon, #view-archdemo .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .5; }
+  #view-demo .empty-state .msg, #view-archdemo .empty-state .msg { font-size: 13px; margin-bottom: 4px; }
+  #view-demo .empty-state .sub, #view-archdemo .empty-state .sub { font-size: 11px; color: var(--text3); }
 
   /* ═══ RESPONSIVE ═══ */
   @media (max-width: 900px) {
@@ -690,23 +960,56 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+  /* ═══ MERGED DEMO LAYOUT ADJUSTMENTS ═══ */
+  #view-demo { padding: 14px 24px; }
+  #view-archdemo { padding: 24px 24px 40px; }
+  /* account for agent-doc's taller header + nav bar */
+  #view-demo .demo-layout { height: calc(100vh - 140px); }
+  /* in the merged layout the only top-level tabs are agent's .nav-tab,
+     hide demo's internal .mode-tabs (not rendered anyway) */
+  .mode-tabs { display: none; }
+  /* allow the demo view to scroll if viewport is short */
+  #view-demo { overflow-x: hidden; }
+  @media (max-width: 900px) {
+    #view-demo .demo-layout { height: auto; min-height: calc(100vh - 140px); }
+  }
+
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-badge">HOK CS</div>
-  <h1>王者荣耀 · 智能客服 Agent · 交互演示</h1>
-  <div class="header-meta">DEMO v1.0 · 2026年4月 · @AI产品日志</div>
+  <h1>王者荣耀 · 智能客服 Agent 设计文档 · 含交互演示</h1>
+  <div class="header-meta">v4.0 · 2026 · AI产品经理 · 赵永明</div>
 </div>
 
-<nav class="mode-tabs">
-  <button class="mode-tab active" data-mode="demo" onclick="switchMode('demo', this)">对话演示</button>
-  <button class="mode-tab" data-mode="arch" onclick="switchMode('arch', this)">多 Agent 架构全景</button>
+<nav class="nav">
+  <button class="nav-tab active" onclick="switchTab('demo',this)">🎬 对话演示</button>
+  <button class="nav-tab" onclick="switchTab('archdemo',this)">🏛 架构全景</button>
+  <button class="nav-tab" onclick="switchTab('kg',this)">知识图谱节点</button>
+  <button class="nav-tab" onclick="switchTab('relgraph',this)">关系总览</button>
+  <button class="nav-tab" onclick="switchTab('multiagent',this)">多 Agent 协同</button>
+  <button class="nav-tab" onclick="switchTab('agent',this)">Agent 内部架构</button>
+  <button class="nav-tab" onclick="switchTab('intent',this)">意图 &amp; 槽位</button>
+  <button class="nav-tab" onclick="switchTab('flow',this)">决策流程</button>
+  <button class="nav-tab" onclick="switchTab('cache',this)">冷热分层</button>
+  <button class="nav-tab" onclick="switchTab('state',this)">多轮状态机</button>
+  <button class="nav-tab" onclick="switchTab('update',this)">知识更新</button>
+  <button class="nav-tab" onclick="switchTab('fallback',this)">灰度回退</button>
+  <button class="nav-tab" onclick="switchTab('flywheel',this)">数据飞轮</button>
+  <button class="nav-tab" onclick="switchTab('monitor',this)">监控看板</button>
+  <button class="nav-tab" onclick="switchTab('i18n',this)">多语言</button>
+  <button class="nav-tab" onclick="switchTab('privacy',this)">隐私合规</button>
+  <button class="nav-tab" onclick="switchTab('proactive',this)">主动触达</button>
+  <button class="nav-tab" onclick="switchTab('persona',this)">用户分层</button>
+  <button class="nav-tab" onclick="switchTab('abtest',this)">AB 测试</button>
+  <button class="nav-tab" onclick="switchTab('cost',this)">成本优化</button>
 </nav>
 
 <!-- ══════════════════ DEMO MODE ══════════════════ -->
-<div id="mode-demo" class="main active">
+<div id="view-demo" class="view active">
   <div class="demo-layout">
     <!-- LEFT: Scenario picker + Chat -->
     <div class="demo-left">
@@ -802,7 +1105,7 @@
 </div>
 
 <!-- ══════════════════ ARCHITECTURE MODE ══════════════════ -->
-<div id="mode-arch" class="main">
+<div id="view-archdemo" class="view">
   <div class="arch-container">
 
     <!-- Intro -->
@@ -961,7 +1264,1315 @@
   </div>
 </div>
 
+<!-- ══════════════════ VIEW: 知识图谱 ══════════════════ -->
+<div id="view-kg" class="view">
+  <div class="section-header">
+    <h2>知识图谱节点全览</h2>
+    <p>14 类实体节点 · 39 条关系边类型 · 支持多跳推理与语义检索</p>
+  </div>
+  <div class="kg-layout">
+    <div class="node-sidebar" id="sidebar"></div>
+    <div id="detail-panel" class="detail-panel">
+      <div class="empty-state">← 选择左侧节点查看完整属性与关系</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 关系总览 ══════════════════ -->
+<div id="view-relgraph" class="view">
+  <div class="section-header">
+    <h2>知识图谱关系总览</h2>
+    <p>14 节点 · 39 条关系边 · 全局结构 · 分域矩阵 · 多跳推理路径</p>
+  </div>
+
+  <!-- 关系边汇总表 -->
+  <div class="flow-section">
+    <h3 style="font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:var(--gold);border-radius:2px"></span>全部关系边汇总（39 条）</h3>
+    <div class="decision-tree" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+      <table class="rel-overview-table">
+        <thead><tr><th>#</th><th>出发节点</th><th>关系名称</th><th>目标节点</th><th>基数</th><th>关系类型</th><th>核心用途</th></tr></thead>
+        <tbody id="rel-table-body"></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 分域关系矩阵 -->
+  <div class="flow-section">
+    <h3 style="font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:var(--purple);border-radius:2px"></span>分域关系矩阵</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="agent-card">
+        <h4>节点域分类</h4>
+        <div class="layer-items">
+          <div class="layer-item" style="border-color:var(--purple)"><div class="item-name">核心实体域</div><div class="item-desc">Player · Account — 用户身份与安全的根基节点</div></div>
+          <div class="layer-item" style="border-color:var(--teal)"><div class="item-name">游戏内容域</div><div class="item-desc">Hero · Skin · Season · SeasonPass · Event — 游戏内可交互对象</div></div>
+          <div class="layer-item" style="border-color:var(--amber)"><div class="item-name">行为记录域</div><div class="item-desc">Match · Order · Device — 玩家行为产生的动态数据</div></div>
+          <div class="layer-item" style="border-color:var(--red)"><div class="item-name">工单处理域</div><div class="item-desc">Issue · Punishment · Compensation · Policy — 客服流程节点</div></div>
+        </div>
+      </div>
+      <div class="agent-card">
+        <h4>关系类型图例</h4>
+        <div class="layer-items">
+          <div class="layer-item" style="border-color:var(--teal)"><div class="item-name"><span class="rel-type-badge rel-type-owns">归属/拥有</span></div><div class="item-desc">层级所属关系，如玩家拥有账号、英雄拥有皮肤</div></div>
+          <div class="layer-item" style="border-color:var(--blue)"><div class="item-name"><span class="rel-type-badge rel-type-behav">行为/参与</span></div><div class="item-desc">用户行为产生的关联，如参与对局、发起订单</div></div>
+          <div class="layer-item" style="border-color:var(--purple)"><div class="item-name"><span class="rel-type-badge rel-type-rule">规则/约束</span></div><div class="item-desc">策略对业务节点的约束，如退款政策约束订单</div></div>
+          <div class="layer-item" style="border-color:var(--coral)"><div class="item-name"><span class="rel-type-badge rel-type-ticket">触发/关联</span></div><div class="item-desc">业务事件触发工单处理，如对局触发异常工单</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <table class="matrix-table" id="matrix-table"></table>
+    </div>
+  </div>
+
+  <!-- 关键多跳推理路径 -->
+  <div class="flow-section">
+    <h3 style="font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:var(--teal);border-radius:2px"></span>关键多跳推理路径</h3>
+    <div class="hop-path-list" id="hop-paths"></div>
+  </div>
+
+  <!-- 度数统计 -->
+  <div class="flow-section">
+    <h3 style="font-size:14px;font-weight:500;margin-bottom:12px;color:var(--text2);display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:3px;height:14px;background:var(--amber);border-radius:2px"></span>节点度数统计（连接数排名）</h3>
+    <div class="decision-tree" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+      <table class="rel-overview-table">
+        <thead><tr><th>节点</th><th>出度（→）</th><th>入度（←）</th><th>总度数</th><th>中心性</th><th>角色说明</th></tr></thead>
+        <tbody id="degree-table-body"></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 多 Agent 协同 ══════════════════ -->
+<div id="view-multiagent" class="view">
+  <div class="section-header">
+    <h2>多 Agent 协同架构</h2>
+    <p>Orchestrator + 5 专域 Agent + 语言适配层 · 三层结构 · 并行执行 · 权限隔离 · A2A 协议</p>
+  </div>
+
+
+    <div class="agent-grid">
+      <div class="agent-card">
+        <h4>单 Agent 架构的三个瓶颈</h4>
+        <div class="layer-items">
+          <div class="layer-item" style="border-color:var(--red)"><div class="item-name">串行处理延迟叠加</div><div class="item-desc">「掉线被判负 + 充值未到账」两个独立问题需串行处理，对局异常 Agent 与支付 Agent 无法并行，总时延 = 各子任务时延之和</div></div>
+          <div class="layer-item" style="border-color:var(--red)"><div class="item-name">专业深度与覆盖的矛盾</div><div class="item-desc">一个 Agent 同时处理退款规则、封禁申诉、英雄技能、版本强度，知识边界模糊，微调时各域样本相互干扰，精度难以持续提升</div></div>
+          <div class="layer-item" style="border-color:var(--red)"><div class="item-name">多语言规则膨胀失控</div><div class="item-desc">7 种语言 × 差异化 Policy × 不同支付渠道，单 Agent System Prompt 膨胀至 8000+ Token，推理成本激增且规则冲突难排查</div></div>
+        </div>
+      </div>
+    </div>
+
+  <div class="flow-section">
+    <h3>三层 Agent 架构总览</h3>
+    <div class="decision-tree">
+      <!-- L1 编排层 -->
+      <div style="background:rgba(155,127,232,.08);border:1px solid rgba(155,127,232,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--purple);margin-bottom:10px">L1 · 编排层（Orchestration Layer）</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="layer-item" style="border-color:var(--purple);background:var(--bg3)">
+            <div class="item-name">Orchestrator Agent</div>
+            <div class="item-desc">接收用户输入，完成 NLU 意图路由和任务拆解，判断单域还是多域并行，汇总子 Agent 结果，生成最终回复。不直接回答业务问题，只做调度。</div>
+          </div>
+          <div class="layer-item" style="border-color:var(--purple);background:var(--bg3)">
+            <div class="item-name">Context Manager</div>
+            <div class="item-desc">跨 Agent 共享上下文：维护会话状态、全局槽位（uid/platform/language）、情绪分值。确保子 Agent 间信息一致，防止重复追问用户。</div>
+          </div>
+        </div>
+      </div>
+      <!-- L2 专域层 -->
+      <div style="background:rgba(61,204,160,.06);border:1px solid rgba(61,204,160,.25);border-radius:10px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--teal);margin-bottom:10px">L2 · 专域执行层（Domain Agent Layer）— 5 个专域 Agent 并行</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="layer-item" style="border-color:#378ADD;background:var(--bg3)">
+            <div class="item-name" style="color:#378ADD">账号安全 Agent</div>
+            <div class="item-desc">处理：登录失败/账号封禁/被盗/申诉<br>图谱权限：Account/Punishment/Device<br>工具权限：账号系统 API（只读+申诉提交）</div>
+          </div>
+          <div class="layer-item" style="border-color:#D85A30;background:var(--bg3)">
+            <div class="item-name" style="color:#D85A30">支付退款 Agent</div>
+            <div class="item-desc">处理：充值到账/退款/重复扣款<br>图谱权限：Order/Skin（is_used）<br>工具权限：支付系统 API（只读+退款提交）</div>
+          </div>
+          <div class="layer-item" style="border-color:#BA7517;background:var(--bg3)">
+            <div class="item-name" style="color:#BA7517">对局补偿 Agent</div>
+            <div class="item-desc">处理：掉线判负/外挂/挂机举报<br>图谱权限：Match/Compensation/Punishment<br>工具权限：对局记录 API（只读）</div>
+          </div>
+          <div class="layer-item" style="border-color:#1D9E75;background:var(--bg3)">
+            <div class="item-name" style="color:#1D9E75">游戏内容 Agent</div>
+            <div class="item-desc">处理：英雄技能/皮肤查询/赛季通行证<br>图谱权限：Hero/Skin/Season/Event<br>工具权限：公告 API（只读）</div>
+          </div>
+          <div class="layer-item" style="border-color:#888780;background:var(--bg3)">
+            <div class="item-name" style="color:#aaa">规则政策 Agent</div>
+            <div class="item-desc">处理：退款规则/封禁标准/防沉迷<br>图谱权限：Policy（全量只读）<br>工具权限：无外部 API 调用</div>
+          </div>
+        </div>
+      </div>
+      <!-- L3 语言适配层 -->
+      <div style="background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">L3 · 语言适配层（Language Adapter Layer）— 按区服注入差异化规则</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <div class="layer-item" style="border-color:var(--gold);background:var(--bg3)">
+            <div class="item-name">中文适配器</div>
+            <div class="item-desc">国服 Policy 版本 · 个保法合规 · 防沉迷规则 · 微信/支付宝渠道</div>
+          </div>
+          <div class="layer-item" style="border-color:var(--gold);background:var(--bg3)">
+            <div class="item-name">繁中适配器</div>
+            <div class="item-desc">港澳台服规则 · 繁简转换 · 无防沉迷 · 本地支付渠道</div>
+          </div>
+          <div class="layer-item" style="border-color:var(--gold);background:var(--bg3)">
+            <div class="item-name">东南亚适配器</div>
+            <div class="item-desc">泰/印尼/马来/越南 · PDPA 合规 · 14天退款期 · GoPay/TrueMoney</div>
+          </div>
+          <div class="layer-item" style="border-color:var(--gold);background:var(--bg3)">
+            <div class="item-name">英语适配器</div>
+            <div class="item-desc">EN-US 区服规则 · 通用规则集 · Google Pay 渠道</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent 间通信协议 -->
+  <div class="flow-section">
+    <h3>Agent 间通信协议（A2A Protocol）</h3>
+    <div class="agent-grid">
+      <div class="agent-card">
+        <h4>任务描述格式（Orchestrator → 专域 Agent）</h4>
+        <div style="background:var(--bg3);border-radius:6px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);line-height:1.7">
+          {<br>
+          &nbsp;&nbsp;"task_id": "t-20260417-8821",<br>
+          &nbsp;&nbsp;"domain": "payment",<br>
+          &nbsp;&nbsp;"intent": "refund_request",<br>
+          &nbsp;&nbsp;"slots": {"order_id": "PO123", "uid": "u456"},<br>
+          &nbsp;&nbsp;"language_adapter": "zh-CN",<br>
+          &nbsp;&nbsp;"context_ref": "session_id_xxx",<br>
+          &nbsp;&nbsp;"timeout_ms": 3000,<br>
+          &nbsp;&nbsp;"priority": "P2"<br>
+          }
+        </div>
+      </div>
+      <div class="agent-card">
+        <h4>结果返回格式（专域 Agent → Orchestrator）</h4>
+        <div style="background:var(--bg3);border-radius:6px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);line-height:1.7">
+          {<br>
+          &nbsp;&nbsp;"task_id": "t-20260417-8821",<br>
+          &nbsp;&nbsp;"status": "success",<br>
+          &nbsp;&nbsp;"confidence": 0.91,<br>
+          &nbsp;&nbsp;"result_type": "auto_resolve",<br>
+          &nbsp;&nbsp;"response_draft": "您的退款...",<br>
+          &nbsp;&nbsp;"evidence": ["order#PO123", "policy#REFUND_001"],<br>
+          &nbsp;&nbsp;"escalate": false,<br>
+          &nbsp;&nbsp;"latency_ms": 1180<br>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 并行处理与结果合并 -->
+  <div class="flow-section">
+    <h3>复合问题并行处理流程</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">用户输入</div><div class="cond-val">「掉线被判负，充值的皮肤也没收到」</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">Orchestrator 识别 2 个意图</div><div class="dt-act-item">对局异常 + 支付异常</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">并行派发</div><div class="cond-val">同时启动两个子任务</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">对局补偿 Agent（异步）</div><div class="dt-act-item">支付退款 Agent（异步）</div><div class="dt-act-item" style="color:var(--teal)">并行执行，非串行</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">结果合并</div><div class="cond-val">两个 Agent 均返回结果</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">Orchestrator 合并两份回复草稿</div><div class="dt-act-item">去重共用槽位（uid 只查一次）</div><div class="dt-act-item highlight">单条连贯回复输出</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">超时处理</div><div class="cond-val">某 Agent 超 3000ms</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">已完成的子任务先回复</div><div class="dt-act-item">超时任务异步处理后补充</div><div class="dt-act-item danger">触发告警</div></div></div>
+    </div>
+  </div>
+
+  <!-- Policy 节点字段变更 -->
+  <div class="flow-section">
+    <h3>知识图谱配套变更：Policy 节点新增字段</h3>
+    <div class="decision-tree">
+      <table class="compensation-table">
+        <thead><tr><th>新增字段</th><th>类型</th><th>用途</th><th>示例值</th></tr></thead>
+        <tbody>
+          <tr><td>applicable_agent</td><td>string[]</td><td>标注哪些专域 Agent 有权读取此规则</td><td>["payment_agent","policy_agent"]</td></tr>
+          <tr><td>applicable_language</td><td>string[]</td><td>此规则版本适用的语言区</td><td>["zh-CN"] 或 ["th-TH","id-ID"]</td></tr>
+          <tr><td>parent_policy_id</td><td>string</td><td>区域版本的父规则ID，支持规则继承</td><td>"POLICY_REFUND_GLOBAL"</td></tr>
+          <tr><td>override_fields</td><td>JSON</td><td>相对父规则的差异化字段，仅存差异</td><td>{"refund_days": 14}</td></tr>
+          <tr><td>agent_readable_summary</td><td>text</td><td>机器可读的精简版规则摘要，注入 System Prompt 时用此字段而非全文</td><td>"退款期14天，已使用不退"</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 工具权限隔离矩阵 -->
+  <div class="flow-section">
+    <h3>专域 Agent 工具权限隔离矩阵</h3>
+    <div class="decision-tree" style="overflow-x:auto;padding:0">
+      <table class="compensation-table">
+        <thead><tr><th>API / 工具</th><th>账号安全 Agent</th><th>支付退款 Agent</th><th>对局补偿 Agent</th><th>游戏内容 Agent</th><th>规则政策 Agent</th></tr></thead>
+        <tbody>
+          <tr><td>账号系统 API（读）</td><td style="color:var(--teal)">✓ 完整读</td><td style="color:var(--blue)">✓ 仅 ban_status</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>账号系统 API（写/申诉）</td><td style="color:var(--teal)">✓ 申诉提交</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>支付系统 API（读）</td><td style="color:var(--text3)">✗</td><td style="color:var(--teal)">✓ 完整读</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>支付系统 API（退款提交）</td><td style="color:var(--text3)">✗</td><td style="color:var(--teal)">✓</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>对局记录 API</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--teal)">✓ 完整读</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>补偿发放 API</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--teal)">✓</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>公告/活动 API</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--text3)">✗</td><td style="color:var(--teal)">✓</td><td style="color:var(--text3)">✗</td></tr>
+          <tr><td>知识图谱（Policy 全量）</td><td style="color:var(--blue)">✓ 封禁类</td><td style="color:var(--blue)">✓ 退款类</td><td style="color:var(--blue)">✓ 补偿类</td><td style="color:var(--blue)">✓ 内容类</td><td style="color:var(--teal)">✓ 全量只读</td></tr>
+          <tr><td>FAQ 向量库</td><td style="color:var(--teal)">✓</td><td style="color:var(--teal)">✓</td><td style="color:var(--teal)">✓</td><td style="color:var(--teal)">✓</td><td style="color:var(--teal)">✓</td></tr>
+          <tr><td>人工升级路由</td><td style="color:var(--text3)">✗ 仅 Orchestrator</td><td style="color:var(--text3)">✗ 仅 Orchestrator</td><td style="color:var(--text3)">✗ 仅 Orchestrator</td><td style="color:var(--text3)">✗ 仅 Orchestrator</td><td style="color:var(--text3)">✗ 仅 Orchestrator</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 迁移路线图 -->
+  <div class="flow-section">
+    <h3>2026 年迁移路线图（单 Agent → 多 Agent）</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">2026年4月</div><div class="cond-val">当前节点 · 已完成</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">单 Agent 基线建立完成（87%）</div><div class="dt-act-item">A2A 协议标准化设计完成</div><div class="dt-act-item">Orchestrator Agent 开发完成</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">2026年5–6月</div><div class="cond-val">进行中</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">账号安全 + 支付退款 Agent 上线</div><div class="dt-act-item">灰度 10% 流量验证</div><div class="dt-act-item">Context Manager 接入</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">2026年7–9月</div><div class="cond-val">规划中</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">对局补偿 + 游戏内容 Agent 上线</div><div class="dt-act-item">并行调度能力验证</div><div class="dt-act-item">4 个语言适配器全量接入</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">2026年10–12月</div><div class="cond-val">目标</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">全量切换多 Agent 架构</div><div class="dt-act-item highlight">自动解决率目标 92%</div><div class="dt-act-item">单会话时延目标 &lt;1s</div></div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════ VIEW: Agent 内部架构 ══════════════════ -->
+<div id="view-agent" class="view">
+  <div class="section-header">
+    <h2>专域 Agent 内部架构</h2>
+    <p>每个专域 Agent 的四层内部结构 · 知识图谱子图访问模式 · ReAct 工具调用链 · 结构化输出协议</p>
+  </div>
+  <div class="pipeline">
+    <h4>单个专域 Agent 内部处理流水线</h4>
+    <div class="pipeline-steps">
+      <div class="p-step"><div class="p-num">01</div><div class="p-name">接收任务包</div><div class="p-sub">Orchestrator 分发</div></div>
+      <div class="p-step"><div class="p-num">02</div><div class="p-name">域内槽位补全</div><div class="p-sub">追问或图谱推断</div></div>
+      <div class="p-step"><div class="p-num">03</div><div class="p-name">子图多跳检索</div><div class="p-sub">本域 Cypher 查询</div></div>
+      <div class="p-step"><div class="p-num">04</div><div class="p-name">工具调用链</div><div class="p-sub">ReAct 最多5步</div></div>
+      <div class="p-step"><div class="p-num">05</div><div class="p-name">置信评估</div><div class="p-sub">判断是否升级</div></div>
+      <div class="p-step"><div class="p-num">06</div><div class="p-name">结构化返回</div><div class="p-sub">交 Orchestrator 汇聚</div></div>
+    </div>
+  </div>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4>感知层 <span class="tag" style="background:rgba(155,127,232,.15);color:var(--purple)">Perception</span></h4>
+      <div class="layer-items">
+        <div class="layer-item" style="border-color:var(--purple)"><div class="item-name">任务包解析</div><div class="item-desc">从 Orchestrator 接收 task_id / slots / context / timeout / lang 结构化输入，不自行解析原始用户文本</div></div>
+        <div class="layer-item" style="border-color:var(--purple)"><div class="item-name">域内子意图精化</div><div class="item-desc">在 Orchestrator 路由基础上细化子意图（如退款→皮肤退款 / 充值退款），减少歧义</div></div>
+        <div class="layer-item" style="border-color:var(--purple)"><div class="item-name">域内槽位补全</div><div class="item-desc">检测缺失必填槽位，向 Orchestrator 发起补充请求；不直接与用户交互，由 Orchestrator 统一追问</div></div>
+        <div class="layer-item" style="border-color:var(--purple)"><div class="item-name">情绪状态接收</div><div class="item-desc">从 Orchestrator 接收情绪分值（0–1），自动调整回复语气阈值和工单优先级</div></div>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h4>推理层 <span class="tag" style="background:rgba(74,158,255,.15);color:var(--blue)">Reasoning</span></h4>
+      <div class="layer-items">
+        <div class="layer-item" style="border-color:var(--blue)"><div class="item-name">知识图谱子图检索</div><div class="item-desc">只访问本域授权节点，Neo4j Cypher 多跳查询，最深 4 跳；跨域需求通过 Orchestrator 中转</div></div>
+        <div class="layer-item" style="border-color:var(--blue)"><div class="item-name">Policy 规则获取</div><div class="item-desc">从规则政策 Agent 获取当前有效规则（含区服差异），不自行解释；接收推送更新后刷新本地缓存</div></div>
+        <div class="layer-item" style="border-color:var(--blue)"><div class="item-name">ReAct 工具调度</div><div class="item-desc">最多 5 步工具链，每步检查是否已有充足证据，避免冗余 API 调用；超时 3s 熔断</div></div>
+        <div class="layer-item" style="border-color:var(--blue)"><div class="item-name">置信度综合计算</div><div class="item-desc">综合图谱命中率、API 返回质量、规则匹配度，输出 0–1 置信分，&lt;0.6 自动设置 escalate_flag</div></div>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h4>工具层 <span class="tag" style="background:rgba(61,204,160,.1);color:var(--teal)">Tools</span></h4>
+      <div class="layer-items">
+        <div class="layer-item" style="border-color:var(--teal)"><div class="item-name">域专属 API（沙箱隔离）</div><div class="item-desc">每个专域 Agent 只能调用授权 API，运行时权限检查，越权调用直接返回 403，不降级处理</div></div>
+        <div class="layer-item" style="border-color:var(--teal)"><div class="item-name">FAQ 向量检索（兜底）</div><div class="item-desc">置信度 &lt;0.6 时触发，稠密检索 Top-3；游戏内容 Agent 有向量库写入权，其余只读</div></div>
+        <div class="layer-item" style="border-color:var(--teal)"><div class="item-name">跨域数据请求</div><div class="item-desc">需要其他域数据时，向 Orchestrator 发出 cross_domain_request，不直接 Agent-to-Agent 调用，避免循环依赖</div></div>
+        <div class="layer-item" style="border-color:var(--teal)"><div class="item-name">工具调用审计日志</div><div class="item-desc">每次调用记录 agent_id / tool_name / 参数摘要 / 耗时，写入不可篡改审计库，供合规审查</div></div>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h4>输出层 <span class="tag" style="background:rgba(240,192,64,.1);color:var(--gold)">Output</span></h4>
+      <div class="layer-items">
+        <div class="layer-item" style="border-color:var(--gold)"><div class="item-name">结构化结果打包</div><div class="item-desc">返回 {task_id, answer_struct, confidence, evidence_ids, escalate_flag, action_items} 给 Orchestrator</div></div>
+        <div class="layer-item" style="border-color:var(--gold)"><div class="item-name">不生成最终用户文本</div><div class="item-desc">输出结构化语义数据，由语言适配 Agent 负责生成面向用户的自然语言回复，保证本地化质量</div></div>
+        <div class="layer-item" style="border-color:var(--gold)"><div class="item-name">操作指令打包</div><div class="item-desc">需执行的操作（退款提交、补偿发放）打包为 action_items，等 Orchestrator 确认后统一执行，防止重复操作</div></div>
+        <div class="layer-item" style="border-color:var(--gold)"><div class="item-name">升级标记与原因</div><div class="item-desc">escalate_flag=true 时附带 escalate_reason（置信度不足 / 权限不足 / 情绪超阈值 / 命中升级规则）</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="agent-card" style="margin-top:14px">
+    <h4>2026 年多 Agent 架构综合技术目标</h4>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px">
+      <div style="background:var(--bg3);border-radius:6px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:500;color:var(--gold)">91%</div><div style="font-size:11px;color:var(--text2);margin-top:3px">系统自动解决率</div></div>
+      <div style="background:var(--bg3);border-radius:6px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:500;color:var(--teal)">&lt;1.8s</div><div style="font-size:11px;color:var(--text2);margin-top:3px">复合问题时延 P50</div></div>
+      <div style="background:var(--bg3);border-radius:6px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:500;color:var(--blue)">95.8%</div><div style="font-size:11px;color:var(--text2);margin-top:3px">专域意图准确率</div></div>
+      <div style="background:var(--bg3);border-radius:6px;padding:12px;text-align:center"><div style="font-size:22px;font-weight:500;color:var(--purple)">4.4/5</div><div style="font-size:11px;color:var(--text2);margin-top:3px">用户满意度目标</div></div>
+    </div>
+  </div>
+</div>
+<!-- ══════════════════ VIEW: 意图槽位 ══════════════════ -->
+<div id="view-intent" class="view">
+  <div class="section-header">
+    <h2>意图分类与槽位定义</h2>
+    <p>Orchestrator Agent 执行分类 · 5 大意图域 · 38 子意图 · 路由至对应专域 Agent</p>
+  </div>
+  <div class="intent-grid" id="intent-container"></div>
+</div>
+
+<!-- ══════════════════ VIEW: 决策流程 ══════════════════ -->
+<div id="view-flow" class="view">
+  <div class="section-header">
+    <h2>核心业务决策流程</h2>
+    <p>账号安全 Agent · 支付退款 Agent · 对局补偿 Agent 各自的决策逻辑 · 升级路由由 Orchestrator 统一执行</p>
+  </div>
+  <div class="flow-section">
+    <h3>封禁申诉决策树（账号安全 Agent 执行）</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">条件</div><div class="cond-val">查询封禁原因码</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">调用 Account API</div><div class="dt-act-item">读取 ban_reason_code</div><div class="dt-act-item">查 Punishment 节点</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">作弊封禁（CHEAT_*）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">告知无法申诉</div><div class="dt-act-item">说明封禁时长</div><div class="dt-act-item">提供举报指引</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">骚扰封禁（HARASS_*）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">检查 appeal_remaining &gt; 0</div><div class="dt-act-item">引导提交申诉工单</div><div class="dt-act-item">72h 内审核</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">判定错误（SYSTEM_ERR）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">立即升人工</div><div class="dt-act-item danger">优先级 P1</div><div class="dt-act-item">附带对局日志</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">appeal_remaining == 0</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">告知无剩余次数</div><div class="dt-act-item">提供封禁到期时间</div><div class="dt-act-item">引导防沉迷指引</div></div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>退款资格判定流程（支付退款 Agent 执行）</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">条件</div><div class="cond-val">查询订单信息</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">调用 Order API</div><div class="dt-act-item">读取 payment_status</div><div class="dt-act-item">计算距今天数</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">订单 &gt; 7 天</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">告知超出退款期</div><div class="dt-act-item">查 Policy#REFUND</div><div class="dt-act-item">提供规则链接</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">商品已使用</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">检查 Skin.is_used</div><div class="dt-act-item highlight">不支持退款</div><div class="dt-act-item">提供使用记录</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">7 天内未使用</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">核验 refund_eligible</div><div class="dt-act-item highlight">提交退款工单</div><div class="dt-act-item">3–5 工作日到账</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">如果</div><div class="cond-val">重复扣款</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">立即升人工 P1</div><div class="dt-act-item">保全订单号</div><div class="dt-act-item danger">联系支付渠道</div></div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>对局异常补偿标准（对局补偿 Agent 执行）</h3>
+    <div class="decision-tree">
+      <table class="compensation-table">
+        <thead><tr><th>异常类型</th><th>判定条件</th><th>补偿内容</th><th>处理时限</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>网络掉线被判负</td><td>掉线时长 &gt;3min，非主动断开</td><td>撤销段位扣分 + 50 金币</td><td>24h 自动处理</td><td>每赛季最多 3 次</td></tr>
+          <tr><td>服务器崩溃</td><td>有效玩家 &gt;50% 同时断线</td><td>撤销扣分 + 200 金币</td><td>12h 自动处理</td><td>全服统一补偿</td></tr>
+          <tr><td>技能 Bug 判负</td><td>日志验证为系统 Bug</td><td>撤销扣分 + 200 点券</td><td>48h 人工审核</td><td>升P1工单</td></tr>
+          <tr><td>队友挂机被连坐</td><td>队友在线时长 &lt;2min</td><td>撤销扣分</td><td>72h 审核</td><td>申请次数受限</td></tr>
+          <tr><td>排位错误匹配</td><td>系统段位算法异常</td><td>段位调整 + 100 金币</td><td>人工审核</td><td>升技术工单</td></tr>
+          <tr><td>充值未到账</td><td>支付成功但未入账 &gt;30min</td><td>补发对应点券</td><td>2h 自动核查</td><td>超时升人工</td></tr>
+          <tr><td>皮肤缺失</td><td>购买记录存在但仓库无显示</td><td>重新发放皮肤</td><td>24h 补发</td><td>需提供订单号</td></tr>
+          <tr><td>活动奖励丢失</td><td>任务完成记录存在但未发放</td><td>补发对应奖励</td><td>48h 处理</td><td>活动期内有效</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>人工升级优先级路由（Orchestrator Agent 统一执行）</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P0 · 紧急</div><div class="cond-val">账号被盗 / 恶意消费</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item danger">5min 内接入</div><div class="dt-act-item">安全专员组</div><div class="dt-act-item">临时冻结账号</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P1 · 高优</div><div class="cond-val">重复扣款 / 系统错误</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">30min 内接入</div><div class="dt-act-item">支付/技术专员</div><div class="dt-act-item">预填工单信息</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P2 · 普通</div><div class="cond-val">退款申请 / 封禁申诉</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">2h 内接入</div><div class="dt-act-item">通用客服组</div><div class="dt-act-item">按队列排序</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P3 · 低优</div><div class="cond-val">建议反馈 / 游戏体验</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">异步工单</div><div class="dt-act-item">24h 回复</div><div class="dt-act-item">收集汇总</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 冷热分层 ══════════════════ -->
+<div id="view-cache" class="view">
+  <div class="section-header">
+    <h2>知识图谱冷热分层策略</h2>
+    <p>三层存储架构 · 专域 Agent 各自持有本层子图 · Redis 预热策略 · 降低综合查询时延</p>
+  </div>
+  <div class="cache-grid">
+    <div class="cache-tier">
+      <div class="cache-tier-header">
+        <div class="cache-tier-badge" style="background:rgba(232,64,64,.2);color:#ff7070">HOT</div>
+        <div class="cache-tier-title">热层 · Redis 内存缓存</div>
+        <div class="cache-tier-latency" style="color:var(--teal)">&lt;5ms</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">更新频率低、访问频率极高的静态知识节点，预加载全量数据</div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#1D9E75"></div><div><div class="cache-node-name">Hero（英雄）</div><div class="cache-node-desc">全量 120+ 英雄属性、技能、出装</div><div class="cache-node-ttl" style="color:var(--teal)">TTL: 版本更新时刷新（约2周）</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#888780"></div><div><div class="cache-node-name">Policy（规则）</div><div class="cache-node-desc">所有封禁/退款/补偿规则文本</div><div class="cache-node-ttl" style="color:var(--teal)">TTL: 规则修改时主动失效</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#639922"></div><div><div class="cache-node-name">Season（赛季）</div><div class="cache-node-desc">当前赛季信息、时间窗口</div><div class="cache-node-ttl" style="color:var(--teal)">TTL: 7天，赛季切换时刷新</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#854F0B"></div><div><div class="cache-node-name">Event（活动）</div><div class="cache-node-desc">进行中活动列表及规则摘要</div><div class="cache-node-ttl" style="color:var(--teal)">TTL: 1小时，活动上下线主动刷新</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#D4537E"></div><div><div class="cache-node-name">Skin（皮肤）静态属性</div><div class="cache-node-desc">名称、稀有度、获取方式（不含 is_used）</div><div class="cache-node-ttl" style="color:var(--teal)">TTL: 版本更新时刷新</div></div></div>
+    </div>
+    <div class="cache-tier">
+      <div class="cache-tier-header">
+        <div class="cache-tier-badge" style="background:rgba(240,192,64,.15);color:var(--gold)">WARM</div>
+        <div class="cache-tier-title">温层 · Neo4j 图数据库</div>
+        <div class="cache-tier-latency" style="color:var(--amber)">10–50ms</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">图结构稳定、需要多跳遍历推理的节点，持久化存储</div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#7F77DD"></div><div><div class="cache-node-name">Player（玩家）基础属性</div><div class="cache-node-desc">uid/level/rank_tier/real_name_status</div><div class="cache-node-ttl" style="color:var(--amber)">读穿策略：写入后异步同步</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#185FA5"></div><div><div class="cache-node-name">Compensation（补偿）</div><div class="cache-node-desc">历史补偿记录，用于防重复发放</div><div class="cache-node-ttl" style="color:var(--amber)">持久化，不过期</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#993C1D"></div><div><div class="cache-node-name">Punishment（惩罚）历史</div><div class="cache-node-desc">申诉次数、历史封禁记录</div><div class="cache-node-ttl" style="color:var(--amber)">持久化，不过期</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#3B6D11"></div><div><div class="cache-node-name">SeasonPass（通行证）</div><div class="cache-node-desc">购买状态、等级进度</div><div class="cache-node-ttl" style="color:var(--amber)">赛季结束后归档</div></div></div>
+    </div>
+    <div class="cache-tier">
+      <div class="cache-tier-header">
+        <div class="cache-tier-badge" style="background:rgba(74,158,255,.15);color:var(--blue)">COLD</div>
+        <div class="cache-tier-title">冷层 · 实时 API 调用</div>
+        <div class="cache-tier-latency" style="color:var(--blue)">100–500ms</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">高实时性要求或数据量极大、不宜缓存的动态节点，每次查询直连后端</div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#BA7517"></div><div><div class="cache-node-name">Match（对局）</div><div class="cache-node-desc">掉线时长、判负原因、举报状态</div><div class="cache-node-ttl" style="color:var(--blue)">实时查对局服务，不入图谱</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#D85A30"></div><div><div class="cache-node-name">Order（订单）</div><div class="cache-node-desc">支付状态、退款进度、到账时间</div><div class="cache-node-ttl" style="color:var(--blue)">实时查支付系统，不缓存</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#378ADD"></div><div><div class="cache-node-name">Account（账号）实时状态</div><div class="cache-node-desc">ban_status / last_login_ip / security_lock</div><div class="cache-node-ttl" style="color:var(--blue)">实时查账号系统，缓存 30s</div></div></div>
+      <div class="cache-node-item"><div class="cache-dot" style="background:#5F5E5A"></div><div><div class="cache-node-name">Device（设备）</div><div class="cache-node-desc">设备指纹、登录历史（安全核验时）</div><div class="cache-node-ttl" style="color:var(--blue)">实时查安全系统</div></div></div>
+    </div>
+  </div>
+  <div class="decision-tree" style="margin-bottom:16px">
+    <div style="font-size:12px;font-weight:500;margin-bottom:10px;color:var(--text2)">FAQ 向量库检索策略（兜底层）</div>
+    <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">图谱置信度 &lt; 0.6</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">稠密向量检索 Top-5</div><div class="dt-act-item">Faiss / Milvus</div><div class="dt-act-item">1200+ 问答对</div></div></div>
+    <div class="dt-row"><div class="dt-cond"><div class="cond-if">更新策略</div><div class="cond-val">人工工单反哺</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">每日凌晨增量更新</div><div class="dt-act-item">审核后入库</div><div class="dt-act-item highlight">数据飞轮核心</div></div></div>
+    <div class="dt-row"><div class="dt-cond"><div class="cond-if">冷启动</div><div class="cond-val">新意图/新场景</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">先人工处理积累数据</div><div class="dt-act-item">50 条以上触发微调</div><div class="dt-act-item">灰度验证后上线</div></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 多轮状态机 ══════════════════ -->
+<div id="view-state" class="view">
+  <div class="section-header">
+    <h2>多轮对话状态机</h2>
+    <p>运行于 Orchestrator Agent · 8 个对话状态 · 跨专域 Agent 共享上下文 · 情绪与语言自适应</p>
+  </div>
+  <div class="state-grid">
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--gray)"></div><div><div class="state-name">IDLE · 空闲等待</div></div></div>
+      <div class="state-desc">初始状态，等待用户发起对话，无任何上下文槽位</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">用户发消息</span> → <span class="trans-target">INTENT_DETECTION</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--purple)"></div><div><div class="state-name">INTENT_DETECTION · 意图识别</div></div></div>
+      <div class="state-desc">NLU 解析用户输入，提取意图类型和已有实体槽位</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">置信度 &gt;0.85 且槽位完整</span> → <span class="trans-target">RETRIEVAL</span></div>
+        <div class="trans-item"><span class="trans-trigger">置信度 &gt;0.85 但槽位缺失</span> → <span class="trans-target">SLOT_FILLING</span></div>
+        <div class="trans-item"><span class="trans-trigger">置信度 0.6–0.85</span> → <span class="trans-target">CLARIFICATION</span></div>
+        <div class="trans-item"><span class="trans-trigger">置信度 &lt;0.6</span> → <span class="trans-target">FAQ_FALLBACK</span></div>
+        <div class="trans-item"><span class="trans-trigger">检测到高情绪</span> → <span class="trans-target">EMOTION_HANDLING</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--teal)"></div><div><div class="state-name">SLOT_FILLING · 槽位追问</div></div></div>
+      <div class="state-desc">意图明确但关键槽位缺失，主动追问用户补充信息。每次只追问一个最关键槽位，最多追问 3 轮</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">用户补充了目标槽位</span> → <span class="trans-target">RETRIEVAL</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户换了话题</span> → <span class="trans-target">INTENT_DETECTION</span></div>
+        <div class="trans-item"><span class="trans-trigger">追问超过 3 轮仍缺失</span> → <span class="trans-target">HUMAN_ESCALATION</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户明确拒绝提供</span> → <span class="trans-target">FAQ_FALLBACK</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--blue)"></div><div><div class="state-name">RETRIEVAL · 多 Agent 检索</div></div></div>
+      <div class="state-desc">槽位就绪，Orchestrator 拆解任务后并行派发至专域 Agent，等待所有子任务返回后合并结果</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">单域任务，专域 Agent 返回高置信结果</span> → <span class="trans-target">RESPONSE_GENERATION</span></div>
+        <div class="trans-item"><span class="trans-trigger">多域任务，所有 Agent 均返回</span> → <span class="trans-target">RESPONSE_GENERATION（合并结果）</span></div>
+        <div class="trans-item"><span class="trans-trigger">某专域 Agent 需补充槽位</span> → <span class="trans-target">SLOT_FILLING</span></div>
+        <div class="trans-item"><span class="trans-trigger">专域 Agent 超时 / 工具调用失败</span> → <span class="trans-target">FALLBACK（降级处理）</span></div>
+        <div class="trans-item"><span class="trans-trigger">命中升级规则（任一 Agent 判断）</span> → <span class="trans-target">HUMAN_ESCALATION</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--amber)"></div><div><div class="state-name">CLARIFICATION · 意图澄清</div></div></div>
+      <div class="state-desc">置信度中等，Agent 给出 2–3 个可能意图供用户确认，避免答非所问</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">用户选择了某个意图</span> → <span class="trans-target">SLOT_FILLING / RETRIEVAL</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户重新描述问题</span> → <span class="trans-target">INTENT_DETECTION</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户仍不明确</span> → <span class="trans-target">FAQ_FALLBACK</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--gold)"></div><div><div class="state-name">RESPONSE_GENERATION · 生成回复</div></div></div>
+      <div class="state-desc">基于检索结果选择 LLM 生成或模板填充，附加操作引导和满意度询问</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">回复发送后用户满意</span> → <span class="trans-target">IDLE（会话关闭）</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户追问或问题未解决</span> → <span class="trans-target">INTENT_DETECTION</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户要求人工</span> → <span class="trans-target">HUMAN_ESCALATION</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--coral)"></div><div><div class="state-name">EMOTION_HANDLING · 情绪安抚</div></div></div>
+      <div class="state-desc">检测到用户高情绪（愤怒/焦虑）时进入，优先安抚再解决问题，暂停所有技术性追问</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">情绪缓解（1–2轮交互后）</span> → <span class="trans-target">INTENT_DETECTION</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户持续激动超 3 轮</span> → <span class="trans-target">HUMAN_ESCALATION（P1）</span></div>
+        <div class="trans-item"><span class="trans-trigger">用户明确要求人工</span> → <span class="trans-target">HUMAN_ESCALATION</span></div>
+      </div>
+    </div>
+    <div class="state-card">
+      <div class="state-header"><div class="state-dot" style="background:var(--red)"></div><div><div class="state-name">HUMAN_ESCALATION · 升级人工</div></div></div>
+      <div class="state-desc">生成工单预填内容，标注优先级，路由到对应技能组，会话进入人工接管状态</div>
+      <div class="transition-list">
+        <div class="trans-item"><span class="trans-trigger">人工接入成功</span> → <span class="trans-target">终态（人工接管）</span></div>
+        <div class="trans-item"><span class="trans-trigger">排队超时无人工</span> → <span class="trans-target">留存工单 + 异步回调</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section" style="margin-top:8px">
+    <h3>槽位追问策略详细规则</h3>
+    <div class="decision-tree">
+      <table class="ask-policy-table">
+        <thead><tr><th>意图域</th><th>必填槽位</th><th>追问话术策略</th><th>超时处理</th></tr></thead>
+        <tbody>
+          <tr><td>账号封禁</td><td>uid</td><td>询问游戏昵称或UID，引导截图账号信息页</td><td>3轮后升人工</td></tr>
+          <tr><td>充值退款</td><td>order_id</td><td>引导在"我的订单"中复制订单号，提供截图示例</td><td>2轮后提供人工通道</td></tr>
+          <tr><td>对局异常</td><td>match_time</td><td>询问大约发生时间，可模糊到"今天下午"即可</td><td>2轮后查最近5场对局列表</td></tr>
+          <tr><td>皮肤丢失</td><td>skin_name / hero_name</td><td>引导进英雄列表查皮肤名称，或上传截图</td><td>3轮后升人工</td></tr>
+          <tr><td>账号找回</td><td>login_type + bind_phone</td><td>分步引导，先确认注册方式，再询问绑定手机后4位</td><td>安全问题立即升人工</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <h3>话题切换与上下文清除规则</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">用户中途换话题</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">保留 uid/platform 全局槽位</div><div class="dt-act-item">清除业务相关槽位</div><div class="dt-act-item">重新进入 INTENT_DETECTION</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">会话空闲超 15min</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">清除所有槽位上下文</div><div class="dt-act-item">状态回到 IDLE</div><div class="dt-act-item">记录会话ID备查</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">同一问题第 2 次提问</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">检测重复问题标记</div><div class="dt-act-item">调整回复策略（更简洁）</div><div class="dt-act-item highlight">第 3 次自动升人工</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 知识更新 ══════════════════ -->
+<div id="view-update" class="view">
+  <div class="section-header">
+    <h2>知识图谱更新与维护机制</h2>
+    <p>分节点更新频率 · 专域 Agent 子图独立维护 · 语言适配器 Policy 版本管理 · 过期知识防护</p>
+  </div>
+  <div class="update-grid">
+    <div class="update-card">
+      <h4>游戏内容节点更新 <span class="freq-badge" style="background:rgba(232,64,64,.15);color:#ff7070">高频 · 每2周</span></h4>
+      <div class="update-row"><div class="update-field">Hero.strength_tier</div><div class="update-who">游戏运营</div><div class="update-delay" style="color:var(--teal)">&lt;2h</div><div class="update-how">版本更新日自动从 patch notes 解析，NLP提取强度变更信息</div></div>
+      <div class="update-row"><div class="update-field">Hero.patch_note</div><div class="update-who">运营 Bot</div><div class="update-delay" style="color:var(--teal)">&lt;1h</div><div class="update-how">官方公告发布后 Webhook 触发自动同步</div></div>
+      <div class="update-row"><div class="update-field">Hero.recommended_build</div><div class="update-who">数据分析</div><div class="update-delay" style="color:var(--amber)">24h</div><div class="update-how">每日凌晨统计高分玩家出装数据，自动更新 Top-3 推荐</div></div>
+      <div class="update-row"><div class="update-field">Skin.is_limited</div><div class="update-who">活动系统</div><div class="update-delay" style="color:var(--teal)">&lt;5min</div><div class="update-how">活动上线/下线时 Event 系统主动推送，实时更新</div></div>
+      <div class="update-row"><div class="update-field">Season（新赛季）</div><div class="update-who">运营 + 研发</div><div class="update-delay" style="color:var(--amber)">赛季前24h</div><div class="update-how">提前创建新 Season 节点，赛季开始时切换 is_current 标记</div></div>
+    </div>
+    <div class="update-card">
+      <h4>规则策略节点更新 <span class="freq-badge" style="background:rgba(155,127,232,.15);color:var(--purple)">低频 · 按需</span></h4>
+      <div class="update-row"><div class="update-field">Policy（规则变更）</div><div class="update-who">法务/运营</div><div class="update-delay" style="color:var(--amber)">生效前48h</div><div class="update-how">走人工审核流程，新版本 draft 态，生效日自动切换 is_active</div></div>
+      <div class="update-row"><div class="update-field">Policy.condition_json</div><div class="update-who">研发</div><div class="update-delay" style="color:var(--amber)">生效前48h</div><div class="update-how">机器可读条件同步修改，触发自动化测试验证逻辑</div></div>
+      <div class="update-row"><div class="update-field">Compensation 标准</div><div class="update-who">客服负责人</div><div class="update-delay" style="color:var(--amber)">生效前24h</div><div class="update-how">补偿方案调整需客服负责人 + 运营双签审批</div></div>
+    </div>
+    <div class="update-card">
+      <h4>FAQ 向量库更新 <span class="freq-badge" style="background:rgba(61,204,160,.1);color:var(--teal)">每日</span></h4>
+      <div class="update-row"><div class="update-field">新增 FAQ 条目</div><div class="update-who">人工工单</div><div class="update-delay" style="color:var(--teal)">次日凌晨</div><div class="update-how">人工处理的工单经质检后批量导入，自动向量化入库</div></div>
+      <div class="update-row"><div class="update-field">低质量条目清理</div><div class="update-who">数据 Bot</div><div class="update-delay" style="color:var(--amber)">每周</div><div class="update-how">ROUGE 相似度检测重复条目，召回率低于阈值的条目标记清理</div></div>
+      <div class="update-row"><div class="update-field">模型微调触发</div><div class="update-who">算法团队</div><div class="update-delay" style="color:var(--amber)">月度</div><div class="update-how">新意图数据量 &gt;200 条时，触发增量微调并灰度验证</div></div>
+    </div>
+    <div class="update-card">
+      <h4>多 Agent 专域子图维护 <span class="freq-badge" style="background:rgba(61,204,160,.1);color:var(--teal)">各域独立</span></h4>
+      <div class="update-row"><div class="update-field">账号安全子图</div><div class="update-who">安全专员</div><div class="update-delay" style="color:var(--teal)">&lt;1h</div><div class="update-how">封禁原因码新增、申诉流程变更，走账号安全 Agent 独立发布通道（已于2026年4月建立）</div></div>
+      <div class="update-row"><div class="update-field">支付退款子图</div><div class="update-who">支付团队</div><div class="update-delay" style="color:var(--amber)">24h</div><div class="update-how">新增支付渠道、退款流程变更，只影响支付退款 Agent，其余 Agent 零感知</div></div>
+      <div class="update-row"><div class="update-field">语言适配器 Policy</div><div class="update-who">本地化团队</div><div class="update-delay" style="color:var(--amber)">生效前48h</div><div class="update-how">各区服规则覆盖字段独立更新（2026年5月起，中文/东南亚/英语适配器分批上线）</div></div>
+      <div class="update-row"><div class="update-field">A2A 协议版本</div><div class="update-who">研发</div><div class="update-delay" style="color:var(--amber)">灰度7天后全量</div><div class="update-how">向后兼容，新旧版本并行运行 7 天后切换（首版协议已于2026年4月冻结）</div></div>
+    </div>
+    <div class="update-card">
+      <h4>过期知识防护机制 <span class="freq-badge" style="background:rgba(232,64,64,.15);color:var(--red)">关键</span></h4>
+      <div class="update-row"><div class="update-field">版本号校验</div><div class="update-who">系统自动</div><div class="update-delay" style="color:var(--teal)">实时</div><div class="update-how">每次图谱查询附带版本号比对，与当前游戏版本不符时标注"可能过期"</div></div>
+      <div class="update-row"><div class="update-field">知识有效期标记</div><div class="update-who">系统自动</div><div class="update-delay" style="color:var(--teal)">实时</div><div class="update-how">Policy.expire_date 临近7天时，自动触发人工复核提醒</div></div>
+      <div class="update-row"><div class="update-field">置信度惩罚</div><div class="update-who">推理引擎</div><div class="update-delay" style="color:var(--teal)">实时</div><div class="update-how">超过 TTL 未更新的节点，在置信度评分中扣减 0.1，倒逼更新</div></div>
+      <div class="update-row"><div class="update-field">紧急知识通道</div><div class="update-who">客服负责人</div><div class="update-delay" style="color:var(--teal)">&lt;30min</div><div class="update-how">重大 Bug/政策突变时走绿色通道，跳过审批流直接更新并记录</div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>更新失败保护机制</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">解析失败（patch notes 格式变化）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">保留上一版本数据</div><div class="dt-act-item">告警通知运营</div><div class="dt-act-item highlight">人工接管更新</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">新规则与现有逻辑冲突</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">阻断自动部署</div><div class="dt-act-item danger">触发人工审核</div><div class="dt-act-item">回滚到上一版本</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">场景</div><div class="cond-val">Neo4j 写入超时</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">写入消息队列暂存</div><div class="dt-act-item">30分钟后重试</div><div class="dt-act-item">同时 Redis 热层降级提供服务</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 灰度回退 ══════════════════ -->
+<div id="view-fallback" class="view">
+  <div class="section-header">
+    <h2>灰度发布与降级回退机制</h2>
+    <p>置信度分级响应 · 五级降级链路 · 新版本灰度策略 · 熔断保护</p>
+  </div>
+  <div class="fallback-grid">
+    <div class="fallback-card">
+      <h4>置信度分级响应策略</h4>
+      <div style="margin-bottom:12px">
+        <div class="conf-bar-row"><div class="conf-range">0.85 – 1.0</div><div class="conf-bar-wrap"><div class="conf-bar" style="width:100%;background:var(--teal)"></div></div><div class="conf-label" style="color:var(--teal)">自动回复</div></div>
+        <div class="conf-bar-row"><div class="conf-range">0.70 – 0.85</div><div class="conf-bar-wrap"><div class="conf-bar" style="width:70%;background:var(--gold)"></div></div><div class="conf-label" style="color:var(--gold)">回复+满意度询问</div></div>
+        <div class="conf-bar-row"><div class="conf-range">0.60 – 0.70</div><div class="conf-bar-wrap"><div class="conf-bar" style="width:50%;background:var(--amber)"></div></div><div class="conf-label" style="color:var(--amber)">回复+人工入口</div></div>
+        <div class="conf-bar-row"><div class="conf-range">0.40 – 0.60</div><div class="conf-bar-wrap"><div class="conf-bar" style="width:30%;background:var(--coral)"></div></div><div class="conf-label" style="color:var(--coral)">FAQ 兜底+人工</div></div>
+        <div class="conf-bar-row"><div class="conf-range">0.00 – 0.40</div><div class="conf-bar-wrap"><div class="conf-bar" style="width:10%;background:var(--red)"></div></div><div class="conf-label" style="color:var(--red)">直接升人工</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3)">满意度询问话术：「以上信息是否解决了您的问题？」用户选"否"时自动降级到下一档</div>
+    </div>
+    <div class="fallback-card">
+      <h4>五级降级链路</h4>
+      <div class="degradation-steps">
+        <div class="deg-step"><div class="deg-num">L1</div><div class="deg-content"><div class="deg-title" style="color:var(--teal)">LLM 精确回复</div><div class="deg-desc">RAG 增强生成，引用知识图谱节点，&lt;2s 响应</div></div></div>
+        <div class="deg-step"><div class="deg-num">L2</div><div class="deg-content"><div class="deg-title" style="color:var(--gold)">预定义模板回复</div><div class="deg-desc">高频场景模板填充，&lt;200ms，LLM 超时时自动切换</div></div></div>
+        <div class="deg-step"><div class="deg-num">L3</div><div class="deg-content"><div class="deg-title" style="color:var(--amber)">FAQ 向量检索回复</div><div class="deg-desc">Top-1 FAQ 条目 + 相似问题推荐，置信度不足时触发</div></div></div>
+        <div class="deg-step"><div class="deg-num">L4</div><div class="deg-content"><div class="deg-title" style="color:var(--coral)">静态帮助文档链接</div><div class="deg-desc">推送相关帮助页面链接，LLM 和向量库均无法回答时</div></div></div>
+        <div class="deg-step"><div class="deg-num">L5</div><div class="deg-content"><div class="deg-title" style="color:var(--red)">人工客服升级</div><div class="deg-desc">预填工单，标注上下文，路由到对应技能组</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>新版本灰度发布策略</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 1</div><div class="cond-val">内部测试（0%流量）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">客服团队内部账号</div><div class="dt-act-item">100 个测试用例覆盖</div><div class="dt-act-item">准确率需 &gt;90%</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 2</div><div class="cond-val">小流量（5% 用户）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">随机选取 5% 真实用户</div><div class="dt-act-item">持续48h，监控指标</div><div class="dt-act-item">满意度对比旧版</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 3</div><div class="cond-val">扩量（30% 用户）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">新版指标均优于旧版</div><div class="dt-act-item">持续72h 观察</div><div class="dt-act-item">重点关注升人工率</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 4</div><div class="cond-val">全量（100%）</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">旧版保留7天可回滚</div><div class="dt-act-item">监控48h</div><div class="dt-act-item">归档旧版本</div></div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>熔断保护机制</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">LLM 服务响应 &gt;5s</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">自动切换 L2 模板层</div><div class="dt-act-item">告警运维</div><div class="dt-act-item">每分钟探活恢复</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">满意度5分钟内下降 &gt;15%</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item danger">自动回滚到上一版本</div><div class="dt-act-item">通知算法团队</div><div class="dt-act-item">人工介入排查</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">升人工率突增 &gt;30%</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">暂停当前版本发布</div><div class="dt-act-item">人工审查近期工单</div><div class="dt-act-item">定位意图识别异常</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 数据飞轮 ══════════════════ -->
+<div id="view-flywheel" class="view">
+  <div class="section-header">
+    <h2>数据飞轮设计</h2>
+    <p>人工处理 → 数据沉淀 → 知识更新 → Agent 优化 → 减少人工 · 形成正向循环</p>
+  </div>
+  <div class="flywheel-timeline">
+    <div class="fw-step">
+      <div class="fw-icon">💬</div>
+      <div class="fw-body">
+        <div class="fw-title">1 · 用户发起咨询</div>
+        <div class="fw-desc">用户通过 App 内客服、微信公众号、官方论坛等渠道发起咨询，Agent 记录完整对话流（意图、槽位、上下文、情绪分值）和处理结果（自动解决 / 升人工 / 用户放弃）。</div>
+        <div class="fw-tags"><span class="fw-tag">多渠道接入</span><span class="fw-tag">全量日志</span><span class="fw-tag">匿名脱敏</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">🤝</div>
+      <div class="fw-body">
+        <div class="fw-title">2 · 人工处理与标注</div>
+        <div class="fw-desc">Agent 无法自动解决的工单流转至人工。人工客服在处理时同步完成数据标注：确认真实意图类别、补充槽位值、记录正确答案和解决方案。质检人员复核标注质量（抽样率 20%）。</div>
+        <div class="fw-tags"><span class="fw-tag">意图修正</span><span class="fw-tag">槽位补全</span><span class="fw-tag">答案记录</span><span class="fw-tag">质检抽样</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">🔍</div>
+      <div class="fw-body">
+        <div class="fw-title">3 · 自动挖掘高价值样本</div>
+        <div class="fw-desc">每日凌晨数据管道自动运行：筛选 Agent 处理失败（置信度 &lt;0.6）但人工成功解决的工单，这些是最有训练价值的"难例"。同时识别新出现的问题类型（无对应意图的工单聚类）作为扩充候选。</div>
+        <div class="fw-tags"><span class="fw-tag">难例挖掘</span><span class="fw-tag">新意图发现</span><span class="fw-tag">聚类分析</span><span class="fw-tag">日均处理</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">📚</div>
+      <div class="fw-body">
+        <div class="fw-title">4 · 知识图谱与 FAQ 更新</div>
+        <div class="fw-desc">高质量样本经审核后分两路更新：（1）结构化问题（有明确节点归属）更新到知识图谱对应节点的属性或新增 Issue 类型节点；（2）长尾问题（无图谱对应）写入 FAQ 向量库并向量化索引。Policy 变更走独立审批流程。</div>
+        <div class="fw-tags"><span class="fw-tag">图谱节点更新</span><span class="fw-tag">FAQ 向量入库</span><span class="fw-tag">双路分发</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">🧠</div>
+      <div class="fw-body">
+        <div class="fw-title">5 · 模型增量微调</div>
+        <div class="fw-desc">当某意图累计新样本 &gt;200 条，或准确率连续3天低于基线时，触发 NLU 模型增量微调。微调采用 LoRA 轻量级方式，在原模型基础上叠加，不影响已有意图的性能。微调后经 A/B 测试验证效果。</div>
+        <div class="fw-tags"><span class="fw-tag">LoRA 微调</span><span class="fw-tag">A/B 验证</span><span class="fw-tag">增量不破坏存量</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">🚀</div>
+      <div class="fw-body">
+        <div class="fw-title">6 · 灰度部署与效果验证</div>
+        <div class="fw-desc">更新后的知识和模型走灰度发布流程（5% → 30% → 100%），实时监控自动解决率、满意度、升人工率三大核心指标。效果提升则全量，效果回退则触发熔断回滚。</div>
+        <div class="fw-tags"><span class="fw-tag">灰度发布</span><span class="fw-tag">指标监控</span><span class="fw-tag">自动熔断</span></div>
+      </div>
+    </div>
+    <div class="fw-step">
+      <div class="fw-icon">📈</div>
+      <div class="fw-body">
+        <div class="fw-title">7 · 自动解决率提升 · 飞轮加速</div>
+        <div class="fw-desc">Agent 能力增强后，能自动解决更多问题，人工处理量减少。但人工处理的都是更难、更边缘的案例，标注价值更高，进一步驱动下一轮优化。飞轮越转越快，理论天花板是 95% 自动解决率（保留 5% 给高情绪和复杂纠纷）。</div>
+        <div class="fw-tags"><span class="fw-tag">目标 95% 自动化</span><span class="fw-tag">边际成本递减</span><span class="fw-tag">持续自我进化</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>飞轮关键数据管道（2026年4月现状）</h3>
+    <div class="pipeline-detail">
+      <div class="pd-card">
+        <h5>日均数据处理量（当前）</h5>
+        <div class="pd-item">用户咨询总量：50,000 条/日</div>
+        <div class="pd-item">Agent 自动解决：43,500 条（87%）</div>
+        <div class="pd-item">升人工工单：6,500 条（13%）</div>
+        <div class="pd-item">可用于训练样本：约 2,000 条/日</div>
+        <div class="pd-item">经质检入库：约 800 条/日</div>
+      </div>
+      <div class="pd-card">
+        <h5>知识库规模（2026年4月）</h5>
+        <div class="pd-item">FAQ 向量库：2,400 条（当前）</div>
+        <div class="pd-item">月增速：约 300 条</div>
+        <div class="pd-item">年底预计：约 4,800 条</div>
+        <div class="pd-item">专域子图：5 个，各自独立维护</div>
+        <div class="pd-item">Policy 节点版本：7 个语言区各一份</div>
+      </div>
+      <div class="pd-card">
+        <h5>效果提升里程碑（2026年4月起）</h5>
+        <div class="pd-item">4月现状：单 Agent 基线 87%</div>
+        <div class="pd-item">6月目标：多 Agent 灰度，89%</div>
+        <div class="pd-item">9月目标：专域 Agent 全上线，91%</div>
+        <div class="pd-item">12月目标：全量多 Agent，92%</div>
+        <div class="pd-item">年底：人工处理量下降 50%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 监控看板 ══════════════════ -->
+<div id="view-monitor" class="view">
+  <div class="section-header">
+    <h2>运营监控看板设计</h2>
+    <p>实时指标 · 告警规则 · SLA 追踪 · 异常预警 · 周期报告</p>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="metric-val" style="color:var(--teal)">87.0%</div><div class="metric-label">自动解决率（2026年4月现状）</div><div class="metric-trend" style="color:var(--teal)">年底目标 92% ↑ +0.3%/周</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--blue)">1.18s</div><div class="metric-label">平均响应时延（P50 · 单Agent阶段）</div><div class="metric-trend" style="color:var(--amber)">多Agent并行后目标 &lt;1.0s</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--gold)">94.3%</div><div class="metric-label">意图识别准确率（Orchestrator）</div><div class="metric-trend" style="color:var(--teal)">专域 Agent 上线后目标 97%+</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--purple)">4.21</div><div class="metric-label">用户满意度（7日均）</div><div class="metric-trend" style="color:var(--teal)">年底目标 4.5/5 ↑ +0.08</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--coral)">13.0%</div><div class="metric-label">升人工率（当日）</div><div class="metric-trend" style="color:var(--teal)">年底目标 &lt;8% ↓ -0.5%/月</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--amber)">91.2%</div><div class="metric-label">首解率（不需二次提问）</div><div class="metric-trend" style="color:var(--teal)">年底目标 &gt;93% ↑ +0.2%</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--green)">98.7%</div><div class="metric-label">系统可用率（过去30日）</div><div class="metric-trend" style="color:var(--amber)">SLA 目标 99.5%（待提升）</div></div>
+    <div class="metric-card"><div class="metric-val" style="color:var(--red)">3</div><div class="metric-label">活跃 P0/P1 告警（今日）</div><div class="metric-trend" style="color:var(--amber)">目标 0 · 含多Agent超时告警</div></div>
+  </div>
+
+  <div class="flow-section">
+    <h3>告警规则配置</h3>
+    <div class="decision-tree">
+      <table class="alert-table">
+        <thead><tr><th>告警名称</th><th>触发条件</th><th>严重级别</th><th>通知对象</th><th>自动处置</th></tr></thead>
+        <tbody>
+          <tr><td>自动解决率骤降</td><td>5min 内下降 &gt;10% 绝对值</td><td><span class="sev-badge sev-p0">P0</span></td><td>算法 + 运营 + 客服负责人</td><td>触发灰度回滚评估</td></tr>
+          <tr><td>LLM 响应超时</td><td>P99 时延 &gt;5s 持续 2min</td><td><span class="sev-badge sev-p0">P0</span></td><td>运维 + 算法</td><td>自动切换 L2 模板层</td></tr>
+          <tr><td>升人工率突增</td><td>1h 内升人工率 &gt;30%</td><td><span class="sev-badge sev-p1">P1</span></td><td>客服负责人 + 算法</td><td>暂停当前版本扩量</td></tr>
+          <tr><td>特定意图准确率下降</td><td>某子意图准确率 &lt;80% 连续3次</td><td><span class="sev-badge sev-p1">P1</span></td><td>算法团队</td><td>标记该意图走 FAQ 兜底</td></tr>
+          <tr><td>知识过期预警</td><td>Policy/Hero 节点距上次更新 &gt;30天</td><td><span class="sev-badge sev-p2">P2</span></td><td>运营团队</td><td>推送 Lark 卡片提醒</td></tr>
+          <tr><td>FAQ 向量库召回下降</td><td>Top-1 召回率 &lt;60%（日度检测）</td><td><span class="sev-badge sev-p2">P2</span></td><td>算法团队</td><td>触发 FAQ 质量清洗任务</td></tr>
+          <tr><td>用户满意度下降</td><td>7日均满意度 &lt;3.8</td><td><span class="sev-badge sev-p1">P1</span></td><td>客服负责人 + 产品</td><td>抽样人工审查近期工单</td></tr>
+          <tr><td>新问题类型激增</td><td>1h 内 &gt;50 条无意图匹配的工单</td><td><span class="sev-badge sev-p2">P2</span></td><td>产品 + 运营</td><td>自动聚类推送问题摘要</td></tr>
+          <tr><td>Redis 缓存命中率下降</td><td>热层命中率 &lt;80%</td><td><span class="sev-badge sev-p2">P2</span></td><td>运维</td><td>触发全量缓存预热</td></tr>
+          <tr><td>人工队列积压</td><td>P1 工单等待 &gt;30min 无接入</td><td><span class="sev-badge sev-p0">P0</span></td><td>客服主管</td><td>短信通知备班客服</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="monitor-grid">
+    <div class="monitor-card">
+      <h4>SLA 追踪指标（2026 年多 Agent 目标）</h4>
+      <div class="kpi-row"><div class="kpi-name">自动解决率</div><div class="kpi-val" style="color:var(--teal)">87% → 92%</div><div class="kpi-target">4月现状 → 年底目标</div></div>
+      <div class="kpi-row"><div class="kpi-name">首响应时延 P50</div><div class="kpi-val" style="color:var(--amber)">1.18s → &lt;1.0s</div><div class="kpi-target">并行处理后目标</div></div>
+      <div class="kpi-row"><div class="kpi-name">首响应时延 P99</div><div class="kpi-val" style="color:var(--amber)">4.8s</div><div class="kpi-target">SLA &lt;5s（含超时等待）</div></div>
+      <div class="kpi-row"><div class="kpi-name">P0 工单首响应</div><div class="kpi-val" style="color:var(--teal)">&lt;5min</div><div class="kpi-target">SLA 5min，由 Orchestrator 直接升级</div></div>
+      <div class="kpi-row"><div class="kpi-name">P1 工单首响应</div><div class="kpi-val" style="color:var(--teal)">&lt;28min</div><div class="kpi-target">SLA 30min</div></div>
+      <div class="kpi-row"><div class="kpi-name">P2 工单首响应</div><div class="kpi-val" style="color:var(--teal)">&lt;1.8h</div><div class="kpi-target">SLA 2h</div></div>
+      <div class="kpi-row"><div class="kpi-name">系统可用率</div><div class="kpi-val" style="color:var(--amber)">98.7%</div><div class="kpi-target">SLA 99.5%（多Agent可部分降级）</div></div>
+      <div class="kpi-row"><div class="kpi-name">专域 Agent 意图准确率</div><div class="kpi-val" style="color:var(--teal)">97%+</div><div class="kpi-target">目标（各域独立统计）</div></div>
+    </div>
+    <div class="monitor-card">
+      <h4>周期报告体系（2026年4月起执行）</h4>
+      <div class="kpi-row"><div class="kpi-name">日报（自动生成）</div><div class="kpi-val" style="color:var(--text2)">每日 09:00</div><div class="kpi-target">客服负责人</div></div>
+      <div class="kpi-row"><div class="kpi-name">内容：核心指标趋势 + 告警汇总 + 当日高频问题 TOP5 + 多Agent各域状态</div><div class="kpi-val" style="color:var(--text3)"></div><div class="kpi-target"></div></div>
+      <div class="kpi-row"><div class="kpi-name">周报（半自动）</div><div class="kpi-val" style="color:var(--text2)">每周一 10:00</div><div class="kpi-target">产品 + 运营</div></div>
+      <div class="kpi-row"><div class="kpi-name">内容：7日指标环比 + 飞轮进度 + 知识更新量 + 多Agent迁移进展 + 待优化意图</div><div class="kpi-val" style="color:var(--text3)"></div><div class="kpi-target"></div></div>
+      <div class="kpi-row"><div class="kpi-name">月报（人工撰写）</div><div class="kpi-val" style="color:var(--text2)">每月5号</div><div class="kpi-target">管理层</div></div>
+      <div class="kpi-row"><div class="kpi-name">内容：月度目标达成 + 灰度效果 + 模型迭代 + 多Agent上线里程碑 + 成本节省</div><div class="kpi-val" style="color:var(--text3)"></div><div class="kpi-target"></div></div>
+      <div class="kpi-row"><div class="kpi-name">双月复盘</div><div class="kpi-val" style="color:var(--text2)">双月末</div><div class="kpi-target">全团队</div></div>
+      <div class="kpi-row"><div class="kpi-name">内容：OKR 达成率 + 多Agent迁移阶段总结 + 下阶段 Roadmap 评审</div><div class="kpi-val" style="color:var(--text3)"></div><div class="kpi-target"></div></div>
+    </div>
+    <div class="monitor-card">
+      <h4>异常检测 · 新问题发现机制</h4>
+      <div class="kpi-row"><div class="kpi-name">无意图匹配聚类</div><div class="kpi-val" style="color:var(--blue)">实时</div><div class="kpi-target">每日推送摘要</div></div>
+      <div class="kpi-row"><div class="kpi-name">检测方法：K-Means 聚类，簇大小 &gt;20 条触发推送</div><div class="kpi-val"></div><div class="kpi-target"></div></div>
+      <div class="kpi-row"><div class="kpi-name">话题突增检测</div><div class="kpi-val" style="color:var(--blue)">1h 窗口</div><div class="kpi-target">运营实时感知</div></div>
+      <div class="kpi-row"><div class="kpi-name">检测方法：某关键词频次较7日均值增长 &gt;300% 触发预警</div><div class="kpi-val"></div><div class="kpi-target"></div></div>
+      <div class="kpi-row"><div class="kpi-name">情绪恶化检测</div><div class="kpi-val" style="color:var(--amber)">15min</div><div class="kpi-target">客服主管</div></div>
+      <div class="kpi-row"><div class="kpi-name">检测方法：高情绪工单占比 &gt;20% 触发舆情预警</div><div class="kpi-val"></div><div class="kpi-target"></div></div>
+    </div>
+    <div class="monitor-card">
+      <h4>成本效益追踪（2026年4月起）</h4>
+      <div class="kpi-row"><div class="kpi-name">人工客服人力节省（年底预计）</div><div class="kpi-val" style="color:var(--teal)">~18 FTE</div><div class="kpi-target">较2025年基线</div></div>
+      <div class="kpi-row"><div class="kpi-name">单会话成本（4月现状）</div><div class="kpi-val" style="color:var(--amber)">¥0.12</div><div class="kpi-target">年底目标 ¥0.06</div></div>
+      <div class="kpi-row"><div class="kpi-name">LLM API 月均成本（4月）</div><div class="kpi-val" style="color:var(--amber)">¥14,000</div><div class="kpi-target">预算 ¥18,000（含多Agent）</div></div>
+      <div class="kpi-row"><div class="kpi-name">Agent 间通信开销（月）</div><div class="kpi-val" style="color:var(--teal)">¥1,200</div><div class="kpi-target">A2A 消息队列成本</div></div>
+      <div class="kpi-row"><div class="kpi-name">综合 ROI（年化预测）</div><div class="kpi-val" style="color:var(--gold)">960%</div><div class="kpi-target">较单Agent架构提升 14%</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 多语言 ══════════════════ -->
+<div id="view-i18n" class="view">
+  <div class="section-header">
+    <h2>多语言支持设计</h2>
+    <p>语言适配层与专域 Agent 解耦 · 7 个语言区域 · 差异化 Policy 继承 · 低资源语言冷启动</p>
+  </div>
+
+  <!-- 与多 Agent 架构的关系 -->
+  <div class="flow-section">
+    <h3>语言适配层在多 Agent 架构中的位置</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">设计原则</div><div class="cond-val">业务逻辑与语言规则解耦</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">专域 Agent 只处理业务逻辑</div><div class="dt-act-item">语言适配层注入本地化规则</div><div class="dt-act-item">两者独立迭代，互不干扰</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">运作方式</div><div class="cond-val">任务下发时注入</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">Orchestrator 识别语言区</div><div class="dt-act-item">选择对应语言适配器</div><div class="dt-act-item">适配器向专域 Agent 注入 Policy 摘要 + 本地规则覆盖</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">核心优势</div><div class="cond-val">规则变更只改适配器</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">东南亚退款期从14天改为7天</div><div class="dt-act-item">只更新东南亚适配器的 Policy 覆盖字段</div><div class="dt-act-item highlight">5个专域 Agent 无需任何改动</div></div></div>
+    </div>
+  </div>
+
+  <div class="lang-grid">
+    <div class="lang-card">
+      <h4>支持语言与适配器映射</h4>
+      <table class="lang-table">
+        <thead><tr><th>语言</th><th>语言码</th><th>区服</th><th>用户占比</th><th>NLU 模型策略</th></tr></thead>
+        <tbody>
+          <tr><td>简体中文</td><td>zh-CN</td><td>国服/官服</td><td>68%</td><td>主模型，全量训练，最优先迭代</td></tr>
+          <tr><td>繁体中文</td><td>zh-TW</td><td>台湾/港澳服</td><td>8%</td><td>zh-CN 微调 + 繁简转换层，共享中文适配器</td></tr>
+          <tr><td>英语</td><td>en-US</td><td>东南亚英语区</td><td>6%</td><td>独立模型，英文语料训练</td></tr>
+          <tr><td>印尼语</td><td>id-ID</td><td>印尼服</td><td>7%</td><td>独立模型，印尼语语料，东南亚适配器</td></tr>
+          <tr><td>泰语</td><td>th-TH</td><td>泰国服</td><td>5%</td><td>独立模型，泰语语料，东南亚适配器</td></tr>
+          <tr><td>马来语</td><td>ms-MY</td><td>马来西亚服</td><td>4%</td><td>en-US 微调 + 马来语词典，东南亚适配器</td></tr>
+          <tr><td>越南语</td><td>vi-VN</td><td>越南服</td><td>2%</td><td>低资源语言，冷启动方案，东南亚适配器</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="lang-card">
+      <h4>语言检测优先级（Orchestrator 执行）</h4>
+      <table class="lang-table">
+        <thead><tr><th>检测方式</th><th>优先级</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>账号语言设置</td><td>P1 最高</td><td>Player.language 字段，用户明确选择，100% 采用</td></tr>
+          <tr><td>区服归属</td><td>P2</td><td>Player.region 映射默认语言，覆盖 95% 场景</td></tr>
+          <tr><td>设备系统语言</td><td>P3</td><td>Device.os_language 登录时上报，区服与语言不一致时参考</td></tr>
+          <tr><td>文本实时检测</td><td>P4 兜底</td><td>fastText langdetect，覆盖未设置语言的访客用户</td></tr>
+          <tr><td>多语言混用</td><td>特殊处理</td><td>同句两种语言时以主体语言为准，次要语言词汇正常识别</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="lang-card">
+      <h4>语言适配器 Policy 继承与覆盖机制</h4>
+      <table class="lang-table">
+        <thead><tr><th>规则类型</th><th>全局基准</th><th>国服覆盖</th><th>东南亚覆盖</th></tr></thead>
+        <tbody>
+          <tr><td>退款期限</td><td>7 天</td><td>继承全局</td><td>覆盖为 14 天（消保法）</td></tr>
+          <tr><td>未成年人保护</td><td>基础限制</td><td>覆盖严格防沉迷（法规）</td><td>继承全局</td></tr>
+          <tr><td>数据删除期限</td><td>30 天</td><td>继承全局</td><td>覆盖为 15 天（PDPA）</td></tr>
+          <tr><td>客服响应 SLA</td><td>工作日 2h</td><td>继承全局</td><td>覆盖 7×24h（夜间活跃）</td></tr>
+          <tr><td>支付渠道枚举</td><td>通用渠道</td><td>微信/支付宝/银行卡</td><td>GoPay/TrueMoney/Dana</td></tr>
+          <tr><td>禁用词库</td><td>全局通用词</td><td>国内政治/敏感词</td><td>各国宗教/地区敏感词</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">继承原则：适配器只存储与全局基准的差异字段（Policy.override_fields），全局规则变更后各区服自动同步，无需逐一修改。</div>
+    </div>
+    <div class="lang-card">
+      <h4>翻译质量保障体系</h4>
+      <table class="lang-table">
+        <thead><tr><th>内容类型</th><th>生产方式</th><th>验收标准</th></tr></thead>
+        <tbody>
+          <tr><td>回复模板</td><td>专业本地化团队初译 + 母语审校</td><td>BLEU &gt;0.85，自然度 &gt;4/5</td></tr>
+          <tr><td>FAQ 问答对</td><td>机器翻译 + 人工校对重要条目</td><td>关键信息准确率 100%</td></tr>
+          <tr><td>LLM 动态生成</td><td>直接生成目标语言，禁止先生成中文再翻译</td><td>无翻译腔，自然度 &gt;4/5</td></tr>
+          <tr><td>英雄/皮肤术语</td><td>各语言维护标准译名词典，注入各语言适配器</td><td>术语错误率 &lt;0.1%</td></tr>
+          <tr><td>多语言回归测试</td><td>每次专域 Agent 更新后跑各语言测试集</td><td>任意语言准确率不低于上一版本</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>低资源语言冷启动方案（越南语为例）</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 1</div><div class="cond-val">2026年4–6月 · 数据 &lt;500 条</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">英文专域 Agent + 翻译推理</div><div class="dt-act-item">东南亚适配器注入越南规则</div><div class="dt-act-item">置信度 &lt;0.7 全量升人工</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 2</div><div class="cond-val">2026年7–9月 · 500–2000 条</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">mBERT 跨语言迁移微调</div><div class="dt-act-item">高频场景越南语模板覆盖</div><div class="dt-act-item">自动解决率目标 &gt;60%</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">阶段 3</div><div class="cond-val">2026年10月起 · &gt;2000 条</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">独立越南语 NLU 模型微调</div><div class="dt-act-item">越南语适配器从东南亚通用适配器独立</div><div class="dt-act-item">自动解决率目标 &gt;80%</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 隐私合规 ══════════════════ -->
+<div id="view-privacy" class="view">
+  <div class="section-header">
+    <h2>隐私合规与数据安全</h2>
+    <p>个保法 · GDPR · PDPA · 数据脱敏规则 · 权限分级 · 日志留存策略</p>
+  </div>
+  <div class="privacy-grid">
+    <div class="privacy-card">
+      <h4>数据脱敏规则 <span class="lang-badge" style="background:rgba(232,64,64,.15);color:#ff7070">强制执行</span></h4>
+      <table class="lang-table">
+        <thead><tr><th>字段</th><th>脱敏方式</th><th>展示示例</th></tr></thead>
+        <tbody>
+          <tr><td>手机号</td><td>保留前3后4，中间替换 *</td><td>138****8888</td></tr>
+          <tr><td>身份证号</td><td>仅展示前6后4位</td><td>440301****8888</td></tr>
+          <tr><td>银行卡号</td><td>仅展示后4位</td><td>****6411</td></tr>
+          <tr><td>IP 地址</td><td>仅展示到城市级</td><td>广东省广州市</td></tr>
+          <tr><td>设备ID</td><td>哈希摘要，不可反查</td><td>a3f8...c2d1</td></tr>
+          <tr><td>真实姓名</td><td>仅展示姓氏 + *</td><td>赵**</td></tr>
+          <tr><td>邮箱</td><td>用户名前3字符 + *** + 域名</td><td>zha***@qq.com</td></tr>
+          <tr><td>订单金额</td><td>客服侧仅展示范围（如 ¥50–100），不展示精确值</td><td>¥50–100</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="privacy-card">
+      <h4>客服人员权限分级</h4>
+      <div class="perm-row"><div class="perm-role">一线客服</div><div class="perm-scope">查询基本账号状态、对局摘要、订单状态（脱敏）；不可查真实身份信息</div><div class="perm-level perm-read">只读</div></div>
+      <div class="perm-row"><div class="perm-role">二线专员</div><div class="perm-scope">查询完整封禁记录、订单详情；可提交退款申请；不可修改账号数据</div><div class="perm-level perm-partial">有限读写</div></div>
+      <div class="perm-row"><div class="perm-role">安全专员</div><div class="perm-scope">查询设备指纹、登录IP（完整）、冻结账号；需双人审批才能查完整实名信息</div><div class="perm-level perm-partial">受限完整</div></div>
+      <div class="perm-row"><div class="perm-role">客服主管</div><div class="perm-scope">审批退款 &gt;500元 工单；审批账号注销；查阅客服操作日志</div><div class="perm-level perm-partial">管理权限</div></div>
+      <div class="perm-row"><div class="perm-role">数据分析师</div><div class="perm-scope">访问聚合统计数据，不可访问任何个人明文数据</div><div class="perm-level perm-read">聚合只读</div></div>
+      <div class="perm-row"><div class="perm-role">Agent 系统</div><div class="perm-scope">仅可读取必要字段用于回答，调用后不留存原始数据，查询日志保留30天</div><div class="perm-level perm-read">最小权限</div></div>
+      <div class="perm-row"><div class="perm-role">算法工程师</div><div class="perm-scope">访问脱敏后的训练数据，不可接触生产库，数据需经安全审计委员会批准</div><div class="perm-level perm-none">隔离访问</div></div>
+    </div>
+    <div class="privacy-card">
+      <h4>法规合规要求对照</h4>
+      <table class="lang-table">
+        <thead><tr><th>法规</th><th>适用区域</th><th>核心要求</th><th>当前实现</th></tr></thead>
+        <tbody>
+          <tr><td>个人信息保护法</td><td>中国大陆</td><td>告知同意、最小必要、数据删除权</td><td>已实现，data_delete_requested 字段触发流程</td></tr>
+          <tr><td>GDPR</td><td>欧盟（部分海外玩家）</td><td>被遗忘权、数据可携带权、72h 泄露通报</td><td>部分实现，删除流程 30天内完成</td></tr>
+          <tr><td>PDPA</td><td>泰国</td><td>明确同意、数据本地化、违规 7 天通报</td><td>泰区数据存储在泰国本地服务器</td></tr>
+          <tr><td>UU PDP</td><td>印尼</td><td>数据本地化、同意管理</td><td>印尼区数据本地化已完成</td></tr>
+          <tr><td>未成年人保护法</td><td>中国大陆</td><td>实名认证、时长限制、消费限额</td><td>real_name_status + playtime_today 联动</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="privacy-card">
+      <h4>日志留存与审计策略</h4>
+      <table class="lang-table">
+        <thead><tr><th>日志类型</th><th>留存时长</th><th>存储方式</th><th>访问限制</th></tr></thead>
+        <tbody>
+          <tr><td>Agent 对话日志（含脱敏文本）</td><td>180 天</td><td>加密冷存储</td><td>安全专员+审批</td></tr>
+          <tr><td>客服操作日志</td><td>365 天</td><td>不可篡改审计库</td><td>客服主管</td></tr>
+          <tr><td>账号登录日志</td><td>90 天</td><td>加密热存储</td><td>安全专员</td></tr>
+          <tr><td>支付日志</td><td>5 年</td><td>金融级加密存储</td><td>财务+安全双审批</td></tr>
+          <tr><td>意图分析聚合日志</td><td>永久</td><td>脱敏聚合，无个人信息</td><td>数据分析师</td></tr>
+          <tr><td>模型训练数据</td><td>3 年</td><td>隔离训练环境</td><td>算法工程师+审计</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>用户数据删除请求处理流程</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发</div><div class="cond-val">用户提交注销/删除申请</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">设置 data_delete_requested=true</div><div class="dt-act-item">发送确认邮件/短信</div><div class="dt-act-item">冻结账号 15 天冷静期</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">核验</div><div class="cond-val">15 天冷静期内</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">检查未结订单/未完成退款</div><div class="dt-act-item">检查封禁申诉进度</div><div class="dt-act-item">有未结事项阻断删除</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">执行</div><div class="cond-val">冷静期满，无未结事项</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">删除个人身份信息</div><div class="dt-act-item highlight">保留脱敏聚合统计数据</div><div class="dt-act-item">保留支付合规记录（5年）</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">完成</div><div class="cond-val">删除操作完成</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">发送删除完成通知</div><div class="dt-act-item">审计日志留存记录</div><div class="dt-act-item">国服 30 天内，东南亚 15 天内</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 主动触达 ══════════════════ -->
+<div id="view-proactive" class="view">
+  <div class="section-header">
+    <h2>主动触达场景设计</h2>
+    <p>从被动响应到主动服务 · 8 类主动推送场景 · 触发条件 · 渠道策略 · 频率控制</p>
+  </div>
+  <div class="proactive-grid">
+    <div class="proactive-card">
+      <h4 style="color:var(--coral)">补偿与奖励类</h4>
+      <div class="trigger-item">
+        <div class="trigger-name">补偿发放通知</div>
+        <div class="trigger-cond">Compensation.claim_status = PENDING（新创建）</div>
+        <div class="trigger-action">推送：「您有一笔异常对局补偿待领取，点击领取 50 金币」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">补偿即将过期提醒</div>
+        <div class="trigger-cond">claim_deadline - now() &lt; 48h 且 claim_status = PENDING</div>
+        <div class="trigger-action">推送：「您的补偿将在 48 小时后过期，请及时领取」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">赛季通行证奖励积压</div>
+        <div class="trigger-cond">unclaimed_rewards.length &gt; 5 且距赛季结束 &lt; 7 天</div>
+        <div class="trigger-action">推送：「赛季即将结束，您还有 X 个通行证奖励未领取」</div>
+      </div>
+    </div>
+    <div class="proactive-card">
+      <h4 style="color:var(--amber)">支付异常类</h4>
+      <div class="trigger-item">
+        <div class="trigger-name">充值到账延迟预警</div>
+        <div class="trigger-cond">payment_status=SUCCESS 但 delivery_delay_seconds &gt; 1800</div>
+        <div class="trigger-action">推送：「您的充值正在处理中，预计 X 分钟内到账，无需再次充值」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">疑似重复扣款提醒</div>
+        <div class="trigger-cond">Order.is_duplicate = true（系统检测到）</div>
+        <div class="trigger-action">推送：「检测到可能的重复扣款，已为您冻结处理，客服将主动联系」+ 自动创建 P1 工单</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">退款到账确认</div>
+        <div class="trigger-cond">Order.payment_status 变更为 REFUNDED</div>
+        <div class="trigger-action">推送：「您申请的退款已成功到账，金额 ¥XX」</div>
+      </div>
+    </div>
+    <div class="proactive-card">
+      <h4 style="color:var(--red)">账号安全类</h4>
+      <div class="trigger-item">
+        <div class="trigger-name">异地登录安全预警</div>
+        <div class="trigger-cond">新设备登录且 IP 归属地与历史差异 &gt;500km</div>
+        <div class="trigger-action">推送：「检测到新设备异地登录（XXX），若非本人操作，请立即修改密码」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">账号被盗高风险告警</div>
+        <div class="trigger-cond">is_stolen_risk = true（行为异常）</div>
+        <div class="trigger-action">推送+短信双通道：「账号可能存在安全风险，已临时加强保护，请验证身份」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">封禁即将到期提醒</div>
+        <div class="trigger-cond">ban_expire_time - now() &lt; 24h 且 ban_is_permanent = false</div>
+        <div class="trigger-action">推送：「您的账号封禁将于明日到期，请遵守游戏规则」</div>
+      </div>
+    </div>
+    <div class="proactive-card">
+      <h4 style="color:var(--teal)">游戏内容类</h4>
+      <div class="trigger-item">
+        <div class="trigger-name">限时皮肤下架提醒</div>
+        <div class="trigger-cond">玩家关注的 Skin.limited_end - now() &lt; 72h</div>
+        <div class="trigger-action">推送：「您关注的限时皮肤【XXX】将在 72 小时后下架」（需用户开启关注）</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">申诉结果通知</div>
+        <div class="trigger-cond">Punishment.appeal_status 变更为 APPROVED / REJECTED</div>
+        <div class="trigger-action">推送：「您的封禁申诉结果已出，点击查看详情」</div>
+      </div>
+      <div class="trigger-item">
+        <div class="trigger-name">工单处理结果通知</div>
+        <div class="trigger-cond">Issue.status 变更为 RESOLVED</div>
+        <div class="trigger-action">推送：「您的客服工单已处理完成，请评价本次服务」</div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>推送渠道优先级与频率控制</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P0 安全类</div><div class="cond-val">账号被盗/重复扣款</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">App 推送</div><div class="dt-act-item highlight">短信强制触达</div><div class="dt-act-item">微信服务通知</div><div class="dt-act-item">不受频率限制</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P1 支付类</div><div class="cond-val">充值延迟/退款到账</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">App 推送优先</div><div class="dt-act-item">未读 30min 后短信</div><div class="dt-act-item">每类事件最多 2 次</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P2 奖励类</div><div class="cond-val">补偿/通行证/申诉结果</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">App 推送</div><div class="dt-act-item">每日最多 3 条</div><div class="dt-act-item">22:00–08:00 静默</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">P3 内容类</div><div class="cond-val">皮肤下架/版本更新</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">App 推送（可关闭）</div><div class="dt-act-item">每周最多 2 条</div><div class="dt-act-item">用户明确关注才推送</div></div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>用户推送偏好管理</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">可关闭</div><div class="cond-val">内容/营销类推送</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">用户可在设置中关闭</div><div class="dt-act-item">Player 节点记录偏好</div><div class="dt-act-item">关闭后不影响安全类</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">不可关闭</div><div class="cond-val">安全/支付类推送</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">强制触达，不受偏好设置影响</div><div class="dt-act-item">合规要求必须告知</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 用户分层 ══════════════════ -->
+<div id="view-persona" class="view">
+  <div class="section-header">
+    <h2>用户画像与个性化回复策略</h2>
+    <p>6 类用户画像 · 差异化回复风格 · 优先级规则 · 动态画像更新机制</p>
+  </div>
+  <div class="persona-grid">
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(240,192,64,.2);color:var(--gold)">👑</div>
+        <div><div class="persona-name">高价值玩家（VIP 5+）</div><div class="persona-desc">vip_level ≥ 5 或 total_recharge ≥ 500 元</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">更正式、更详尽，主动提供解决方案而非仅回答问题</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">工单优先级</div><div class="persona-rule-val">自动升级为 P1+，响应时效缩短 50%</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">人工阈值</div><div class="persona-rule-val">置信度 &lt;0.75 即升人工（普通用户 0.6）</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">补偿标准</div><div class="persona-rule-val">同类异常补偿金额上浮 20%</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">专属权益</div><div class="persona-rule-val">VIP 专属客服通道，优先排队</div></div>
+      </div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(155,127,232,.2);color:var(--purple)">🏆</div>
+        <div><div class="persona-name">高段位竞技玩家</div><div class="persona-desc">rank_tier = 王者/巅峰 且 近30天有效对局 &gt;20 场</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">简洁专业，使用游戏术语，不过度解释基础概念</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">对局申诉</div><div class="persona-rule-val">掉线/判负申诉优先处理，段位分损失计算更精确</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">英雄咨询</div><div class="persona-rule-val">直接给出高端局出装与技能加点，跳过入门内容</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">满意度敏感</div><div class="persona-rule-val">不满意反馈触发人工二次跟进</div></div>
+      </div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(61,204,160,.15);color:var(--teal)">🌱</div>
+        <div><div class="persona-name">新手玩家</div><div class="persona-desc">account_age_days &lt; 30 或 level &lt; 20</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">温和友好，步骤拆解详细，多用示例，避免术语</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">引导策略</div><div class="persona-rule-val">主动推荐新手教程链接和功能引导</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">退款宽容</div><div class="persona-rule-val">首次误购提供一次额外退款机会（超出常规 7 天）</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">英雄推荐</div><div class="persona-rule-val">优先推荐难度 1–2 星的入门英雄</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">话术示例</div><div class="persona-rule-val">「您好！让我一步步帮您解决这个问题～」</div></div>
+      </div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(224,96,160,.15);color:var(--pink)">🛡️</div>
+        <div><div class="persona-name">未成年人</div><div class="persona-desc">real_name_status = MINOR 或 playtime_today 接近上限</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">简单友善，避免复杂流程，鼓励联系家长协助</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">消费限制</div><div class="persona-rule-val">自动拦截退款申请中超出未成年限额的消费核查</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">防沉迷</div><div class="persona-rule-val">时长即将到上限时主动提醒，触发防沉迷引导话术</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">家长通道</div><div class="persona-rule-val">自动提供家长监管平台链接</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">数据保护</div><div class="persona-rule-val">未成年人数据适用更严格的访问限制</div></div>
+      </div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(106,191,80,.15);color:var(--green)">🕰️</div>
+        <div><div class="persona-name">老玩家/忠实用户</div><div class="persona-desc">account_age_days &gt; 730 且 近90天活跃</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">像朋友一样，可以适当使用游戏梗和轻松语气</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">历史感知</div><div class="persona-rule-val">回复中可引用「您已陪伴我们 X 年了」增加情感连接</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">申诉宽容</div><div class="persona-rule-val">首次轻微违规申诉通过率提高，历史记录加分</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">流失预警</div><div class="persona-rule-val">提交工单后 7 天未登录，触发关怀回访推送</div></div>
+      </div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-header">
+        <div class="persona-avatar" style="background:rgba(232,64,64,.15);color:var(--red)">😤</div>
+        <div><div class="persona-name">高情绪用户</div><div class="persona-desc">情绪检测分值 &gt; 0.7（愤怒/焦虑）</div></div>
+      </div>
+      <div class="persona-body">
+        <div class="persona-rule"><div class="persona-rule-key">回复风格</div><div class="persona-rule-val">第一句话必须是情绪认可，不急于解决问题</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">禁止话术</div><div class="persona-rule-val">禁止使用「请您理解」「这是规定」「无法处理」等词汇</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">升级阈值</div><div class="persona-rule-val">连续 2 轮高情绪即升人工，不等到置信度触发</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">工单标注</div><div class="persona-rule-val">工单附注情绪状态，人工接入前有情绪预警</div></div>
+        <div class="persona-rule"><div class="persona-rule-key">话术示例</div><div class="persona-rule-val">「非常理解您的感受，这种情况确实很让人着急，让我立刻为您查清楚」</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>动态画像更新机制</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">实时更新</div><div class="cond-val">情绪分值、当前对话状态</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">每轮对话推理后更新</div><div class="dt-act-item">情绪分值衰减（15min）</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">每日更新</div><div class="cond-val">rank_tier、playtime_today</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">凌晨从游戏服务器同步</div><div class="dt-act-item">更新 Redis 玩家基础属性</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">事件触发</div><div class="cond-val">充值/段位升降/账号注册</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">vip_level / total_recharge 实时写入</div><div class="dt-act-item">画像标签即时重算</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: AB 测试 ══════════════════ -->
+<div id="view-abtest" class="view">
+  <div class="section-header">
+    <h2>A/B 测试框架</h2>
+    <p>实验设计规范 · 分组策略 · 显著性检验 · 多实验并行隔离 · 上线决策标准</p>
+  </div>
+  <div class="ab-grid">
+    <div class="ab-card">
+      <h4>实验设计规范</h4>
+      <div class="exp-row"><div class="exp-key">最小样本量</div><div class="exp-val">每组 &gt;500 个独立会话（统计功效 80%，显著性水平 0.05）</div></div>
+      <div class="exp-row"><div class="exp-key">实验周期</div><div class="exp-val">最短 48h（覆盖工作日+周末流量差异），建议 7 天</div></div>
+      <div class="exp-row"><div class="exp-key">主要指标</div><div class="exp-val">自动解决率（北极星指标），不可用作实验终止的唯一依据</div></div>
+      <div class="exp-row"><div class="exp-key">护栏指标</div><div class="exp-val">升人工率、用户满意度、首响应时延——任意一项恶化 &gt;5% 立即停止实验</div></div>
+      <div class="exp-row"><div class="exp-key">观察指标</div><div class="exp-val">各意图准确率、槽位填充成功率、多轮对话轮数、LLM Token 消耗</div></div>
+      <div class="exp-row"><div class="exp-key">分组粒度</div><div class="exp-val">以玩家 uid 哈希分组，保证同一用户全程在同一组（避免体验割裂）</div></div>
+    </div>
+    <div class="ab-card">
+      <h4>多实验并行隔离策略</h4>
+      <div class="exp-row"><div class="exp-key">互斥原则</div><div class="exp-val">同一流量层（如 NLU 层）同时只跑一个实验，不同层可并行</div></div>
+      <div class="exp-row"><div class="exp-key">流量分层</div><div class="exp-val">NLU 层 / 检索策略层 / 生成层 / 模板层各自独立，互不干扰</div></div>
+      <div class="exp-row"><div class="exp-key">优先级</div><div class="exp-val">安全类 &gt; 支付类 &gt; 对局类 &gt; 内容类，高优先级实验抢占流量</div></div>
+      <div class="exp-row"><div class="exp-key">交互效应</div><div class="exp-val">怀疑两实验存在交互时，拆分流量隔离组，分别验证</div></div>
+      <div class="exp-row"><div class="exp-key">并发上限</div><div class="exp-val">同时运行实验 &lt;5 个，避免流量过度碎片化影响统计功效</div></div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>当前/规划中实验列表</h3>
+    <div class="decision-tree">
+      <table class="compensation-table">
+        <thead><tr><th>实验名称</th><th>假设</th><th>对照组</th><th>实验组</th><th>主要指标</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td>追问话术优化</td><td>更口语化的追问提升槽位填充率</td><td>「请提供订单号」</td><td>「能把订单号发给我吗～」</td><td>槽位填充成功率</td><td><span style="color:var(--teal);font-size:11px">完成 ✓ 3月</span></td></tr>
+          <tr><td>置信度阈值调整</td><td>降低自动回复阈值至 0.80 提升自动化率且不降满意度</td><td>阈值 0.85</td><td>阈值 0.80</td><td>自动解决率 + 满意度</td><td><span style="color:var(--teal);font-size:11px">完成 ✓ 4月</span></td></tr>
+          <tr><td>多 Agent 并行 vs 串行</td><td>并行派发复合问题综合时延更低且满意度不降</td><td>串行处理</td><td>并行处理（多 Agent）</td><td>综合时延 + 满意度</td><td><span style="color:var(--amber);font-size:11px">进行中 · 5月结束</span></td></tr>
+          <tr><td>专域 Agent 意图边界</td><td>对局异常 + 支付问题由各自专域 Agent 独立处理优于单 Agent</td><td>单 Agent 统一处理</td><td>双 Agent 并行处理</td><td>准确率 + 用户满意度</td><td><span style="color:var(--amber);font-size:11px">进行中 · 6月结束</span></td></tr>
+          <tr><td>语言适配器注入时机</td><td>在 Orchestrator 层注入规则优于在专域 Agent 层注入</td><td>专域 Agent 内注入</td><td>Orchestrator 统一注入</td><td>规则一致性 + Token 消耗</td><td><span style="color:var(--text3);font-size:11px">计划 7月</span></td></tr>
+          <tr><td>LLM 模型切换</td><td>Qwen-72B 在中文专域场景优于 GPT-4o 且成本低 60%</td><td>GPT-4o（全域）</td><td>Qwen-72B（专域）+ GPT-4o（复杂）</td><td>准确率 + Token 成本</td><td><span style="color:var(--text3);font-size:11px">计划 8月</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ab-section">
+    <h3>上线决策标准</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">全量上线</div><div class="cond-val">所有条件满足</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">主要指标提升且 p &lt; 0.05</div><div class="dt-act-item">护栏指标无恶化</div><div class="dt-act-item highlight">实验组 N &gt;500</div><div class="dt-act-item">持续 7 天稳定</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">延长观察</div><div class="cond-val">效果不显著</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">p &gt; 0.05 但趋势向好</div><div class="dt-act-item">延长至 14 天再评估</div><div class="dt-act-item">补充样本量计算</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">立即终止</div><div class="cond-val">护栏指标恶化</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item danger">满意度下降 &gt;5%</div><div class="dt-act-item danger">升人工率上升 &gt;10%</div><div class="dt-act-item">回滚对照组，复盘原因</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ VIEW: 成本优化 ══════════════════ -->
+<div id="view-cost" class="view">
+  <div class="section-header">
+    <h2>成本优化策略</h2>
+    <p>模型分级调用 · Token 压缩 · 批处理调度 · 缓存复用 · 2026 年成本目标</p>
+  </div>
+  <div class="cost-grid">
+    <div class="cost-card">
+      <h4>模型分级调用策略</h4>
+      <div class="cost-row"><div class="cost-label">L1 · 模板匹配（无 LLM）</div><div class="cost-val" style="color:var(--teal)">¥0.000</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">高频固定场景（封禁时长查询/余额查询），预定义模板直接填充，零 LLM 成本。目标覆盖 35% 请求</div>
+      <div class="cost-row"><div class="cost-label">L2 · 轻量模型（Qwen-7B）</div><div class="cost-val" style="color:var(--teal)">¥0.002/次</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">意图明确、答案简单的场景（FAQ 直接检索后润色），使用 7B 小模型。目标覆盖 30% 请求</div>
+      <div class="cost-row"><div class="cost-label">L3 · 标准模型（Qwen-72B）</div><div class="cost-val" style="color:var(--amber)">¥0.015/次</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">常规咨询、多跳推理场景。国内中文场景 Qwen-72B 优先，替代 GPT-4o 节省 60% 成本。目标覆盖 25% 请求</div>
+      <div class="cost-row"><div class="cost-label">L4 · 旗舰模型（GPT-4o）</div><div class="cost-val" style="color:var(--red)">¥0.08/次</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">复杂多轮推理、安全类敏感场景（账号被盗、法律纠纷）。仅用于 10% 最复杂请求</div>
+    </div>
+    <div class="cost-card">
+      <h4>Token 压缩策略</h4>
+      <div class="cost-row"><div class="cost-label">System Prompt 压缩</div><div class="cost-val" style="color:var(--teal)">节省 40%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">动态 System Prompt：根据意图类型只注入相关规则，而非全量 Policy 文本。封禁意图只注入封禁规则，支付意图只注入退款规则</div>
+      <div class="cost-row"><div class="cost-label">上下文截断策略</div><div class="cost-val" style="color:var(--teal)">节省 25%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">保留最近 5 轮对话（而非全部 10 轮），对超出部分做摘要压缩。单条消息超 200 Token 时提取关键实体后截断</div>
+      <div class="cost-row"><div class="cost-label">RAG 结果精简</div><div class="cost-val" style="color:var(--teal)">节省 20%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">知识图谱检索结果只传必要字段（不传完整节点 JSON），FAQ 只传 Top-3 片段而非全文，平均节省 200 Token/次</div>
+      <div class="cost-row"><div class="cost-label">输出长度控制</div><div class="cost-val" style="color:var(--teal)">节省 15%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">Prompt 中明确要求「回复不超过 150 字」，避免模型冗余输出。操作步骤类上限 200 字，FAQ 类上限 100 字</div>
+    </div>
+    <div class="cost-card">
+      <h4>批处理与调度优化</h4>
+      <div class="cost-row"><div class="cost-label">低峰批处理任务</div><div class="cost-val" style="color:var(--teal)">节省 30%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">FAQ 向量化、知识库更新、日报生成、补偿批量发放等非实时任务，统一调度到凌晨 01:00–06:00 执行，利用 API 低峰定价</div>
+      <div class="cost-row"><div class="cost-label">语义缓存（Semantic Cache）</div><div class="cost-val" style="color:var(--teal)">节省 18%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">相似度 &gt;0.95 的问题复用上一次 LLM 回复（GPTCache），高频重复问题（「赛季什么时候结束」）命中率高达 60%</div>
+      <div class="cost-row"><div class="cost-label">Embedding 缓存</div><div class="cost-val" style="color:var(--teal)">节省 12%</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 8px">FAQ 向量化结果缓存至 Redis，知识库更新前不重复计算。只有新增/修改条目才触发重新向量化</div>
+      <div class="cost-row"><div class="cost-label">流式输出优化</div><div class="cost-val" style="color:var(--blue)">降低延迟</div></div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0 6px">启用 Streaming 模式，用户感知首 Token 时延 &lt;400ms，无需等待完整回复，提升主观体验</div>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>2026 年成本目标与现状对比</h3>
+    <div class="decision-tree">
+      <table class="compensation-table">
+        <thead><tr><th>成本项目</th><th>2025年基线（单Agent）</th><th>2026年4月现状</th><th>2026年12月目标</th><th>优化手段</th></tr></thead>
+        <tbody>
+          <tr><td>LLM API 月均费用</td><td>¥28,000</td><td>¥14,000</td><td>¥10,000</td><td>模型分级 + Token 压缩 + 语义缓存 + 专域 Agent 使用轻量模型</td></tr>
+          <tr><td>向量数据库费用</td><td>¥2,200</td><td>¥900</td><td>¥700</td><td>Embedding 缓存 + 批量更新 + 多 Agent 共享索引</td></tr>
+          <tr><td>图数据库（Neo4j）费用</td><td>¥3,500</td><td>¥2,800</td><td>¥2,400</td><td>热层 Redis 分担查询压力 + 专域子图缓存</td></tr>
+          <tr><td>人工客服人力成本</td><td>¥180,000/月</td><td>¥126,000/月（-12 FTE）</td><td>¥90,000/月（-18 FTE）</td><td>自动解决率从 72% → 87% → 92%</td></tr>
+          <tr><td>单会话综合成本</td><td>¥0.52</td><td>¥0.12</td><td>¥0.06</td><td>并行处理 + 专域轻量模型 + 模板覆盖率提升</td></tr>
+          <tr><td>月总运营成本</td><td>¥213,700</td><td>¥143,700</td><td>¥103,100</td><td>综合优化，全年节省约 ¥135万</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="flow-section">
+    <h3>成本异常告警规则</h3>
+    <div class="decision-tree">
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">日 LLM 费用超预算 20%</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item highlight">告警到算法+财务</div><div class="dt-act-item">自动降级模型层级</div><div class="dt-act-item">排查异常请求来源</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">语义缓存命中率 &lt;30%</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">检查缓存 TTL 配置</div><div class="dt-act-item">分析问题多样性变化</div><div class="dt-act-item">调整相似度阈值</div></div></div>
+      <div class="dt-row"><div class="dt-cond"><div class="cond-if">触发条件</div><div class="cond-val">单会话 Token 超 2000</div></div><div class="dt-arrow">→</div><div class="dt-action"><div class="dt-act-item">标记异常会话</div><div class="dt-act-item">检查上下文截断是否生效</div><div class="dt-act-item danger">核查是否存在 Prompt 注入</div></div></div>
+    </div>
+  </div>
+</div>
+
+
 <script>
+// ═══════════════════════════════════════════════
+// DEMO-SPECIFIC JS (from demo.html)
+// ═══════════════════════════════════════════════
+
 // ════════════════════════════════════════════════════════
 // SCENARIOS DATA
 // ════════════════════════════════════════════════════════
@@ -1247,13 +2858,7 @@ function init() {
   renderScenarioList();
 }
 
-function switchMode(mode, btn) {
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.main').forEach(m => m.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('mode-' + mode).classList.add('active');
-}
-
+// switchMode removed — unified under switchTab()
 // ════════════════════════════════════════════════════════
 // PANEL SUB-TABS (Steps ⇄ Graph)
 // ════════════════════════════════════════════════════════
@@ -1791,6 +3396,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
+    // Only fire when demo view is active
+    if (!document.getElementById('view-demo').classList.contains('active')) return;
     if (e.key === 'ArrowRight' || e.key === ' ') {
       e.preventDefault();
       if (!document.getElementById('next-step-btn').disabled) nextStep();
@@ -1802,7 +3409,788 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-</script>
 
+
+// ═══════════════════════════════════════════════
+// AGENT DOC JS (original)
+// ═══════════════════════════════════════════════
+
+const NODES=[
+  {id:'player',icon:'👤',label:'玩家 Player',sub:'根节点',color:'#7F77DD',bg:'#1a1730',group:'核心实体',
+   desc:'知识图谱的入口根节点。所有查询从玩家 uid 出发进行图遍历，关联账号安全、战绩、消费、行为等所有子图。防沉迷模块通过 real_name_status 与 playtime_today 联动。',
+   props:[
+    {name:'uid',type:'string',desc:'全局唯一标识，PK，不可修改'},
+    {name:'nickname',type:'string',desc:'游戏昵称，可重复，最大16字符'},
+    {name:'level',type:'int 1–200',desc:'账号等级，由经验值累计决定'},
+    {name:'rank_tier',type:'enum',desc:'青铜/白银/黄金/铂金/钻石/星耀/王者/巅峰'},
+    {name:'rank_points',type:'int',desc:'当前段位分，巅峰赛单独统计'},
+    {name:'peak_rank_score',type:'int',desc:'巅峰赛积分（仅王者以上玩家）'},
+    {name:'real_name_status',type:'enum',desc:'未实名/已实名/未成年人',enums:['UNVERIFIED','ADULT','MINOR']},
+    {name:'playtime_today',type:'int(min)',desc:'当日累计在线时长，防沉迷系统来源'},
+    {name:'weekly_playtime',type:'int(min)',desc:'本周在线时长，用于反沉迷统计'},
+    {name:'account_age_days',type:'int',desc:'注册至今天数，用于退款资格判断'},
+    {name:'vip_level',type:'int 0–10',desc:'VIP 等级，由充值总额决定'},
+    {name:'total_recharge',type:'decimal',desc:'历史累计充值金额（元）'},
+    {name:'region',type:'string',desc:'所在大区（如 华南区/东南亚服）'},
+    {name:'platform',type:'enum',desc:'Android/iOS/PC(WeGame)/MacOS',enums:['ANDROID','IOS','PC_WEGAME','MAC']},
+    {name:'client_version',type:'string',desc:'当前客户端版本号（如 v3.88.1.6）'},
+    {name:'language',type:'string',desc:'客户端语言设置（zh-CN/en-US等）'},
+    {name:'created_at',type:'timestamp',desc:'账号注册时间'},
+    {name:'last_active_at',type:'timestamp',desc:'最近一次在线时间'},
+   ],
+   relations:[
+    {dir:'out',target:'Account',label:'拥有',card:'1:1'},
+    {dir:'out',target:'Hero',label:'持有（已购）',card:'1:N'},
+    {dir:'out',target:'Skin',label:'持有（已获取）',card:'1:N'},
+    {dir:'out',target:'Match',label:'参与',card:'1:N'},
+    {dir:'out',target:'Order',label:'发起',card:'1:N'},
+    {dir:'out',target:'Issue',label:'提交',card:'1:N'},
+    {dir:'out',target:'Device',label:'使用',card:'1:N'},
+    {dir:'out',target:'SeasonPass',label:'订阅',card:'1:N'},
+    {dir:'out',target:'Compensation',label:'领取',card:'1:N'},
+   ],
+   indexes:['uid','nickname','region','real_name_status','rank_tier','vip_level'],
+   scenarios:['查询玩家段位与积分','防沉迷时长核验','账号注册天数验证退款资格','VIP等级与优先服务判断'],
+  },
+  {id:'account',icon:'🔐',label:'账号 Account',sub:'安全与登录',color:'#378ADD',bg:'#0e1f35',group:'核心实体',
+   desc:'记录账号的所有登录方式、绑定状态、封禁历史和安全事件。是处理"登录失败""账号被封""找回账号"类工单的核心检索节点，通过 ban_reason_code 关联到 Punishment 节点获取完整惩罚历史。',
+   props:[
+    {name:'account_id',type:'string',desc:'账号唯一标识 PK，与 uid 不同'},
+    {name:'login_type_primary',type:'enum',desc:'主登录方式',enums:['WECHAT','QQ','PHONE','APPLE','GUEST']},
+    {name:'bind_phone',type:'string',desc:'绑定手机号（脱敏展示）'},
+    {name:'bind_wechat',type:'bool',desc:'是否绑定微信'},
+    {name:'bind_qq',type:'bool',desc:'是否绑定QQ'},
+    {name:'bind_apple',type:'bool',desc:'是否绑定 Apple ID'},
+    {name:'last_login_time',type:'timestamp',desc:'最近一次登录时间'},
+    {name:'last_login_ip',type:'string',desc:'最近登录 IP（脱敏，仅显示地区）'},
+    {name:'last_login_device_id',type:'string',desc:'最近登录设备唯一标识'},
+    {name:'login_fail_count',type:'int',desc:'近24小时登录失败次数'},
+    {name:'ban_status',type:'enum',desc:'账号当前状态',enums:['NORMAL','BANNED','FROZEN','DEACTIVATING']},
+    {name:'ban_reason_code',type:'string',desc:'封禁原因码（如 CHEAT_SCRIPT/HARASS_ABUSE）'},
+    {name:'ban_start_time',type:'timestamp',desc:'封禁开始时间'},
+    {name:'ban_expire_time',type:'timestamp',desc:'封禁到期时间（永久封禁为 null）'},
+    {name:'ban_is_permanent',type:'bool',desc:'是否永久封禁'},
+    {name:'appeal_count',type:'int',desc:'历史总申诉次数'},
+    {name:'appeal_remaining',type:'int',desc:'当前周期剩余申诉次数'},
+    {name:'appeal_last_result',type:'enum',desc:'最近申诉结果',enums:['PENDING','APPROVED','REJECTED']},
+    {name:'is_stolen_risk',type:'bool',desc:'异地登录/行为异常风险标记'},
+    {name:'security_lock',type:'bool',desc:'安全锁是否开启'},
+    {name:'two_factor_enabled',type:'bool',desc:'二步验证是否启用'},
+    {name:'data_delete_requested',type:'bool',desc:'是否提交注销/删除数据申请'},
+    {name:'minor_restriction',type:'bool',desc:'未成年人限制是否生效'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'归属于',card:'1:1'},
+    {dir:'out',target:'Punishment',label:'关联惩罚记录',card:'1:N'},
+    {dir:'out',target:'Policy',label:'受约束于',card:'N:M'},
+    {dir:'out',target:'Issue',label:'触发安全事件',card:'1:N'},
+    {dir:'out',target:'Device',label:'登录自',card:'1:N'},
+   ],
+   indexes:['account_id','bind_phone','ban_status','ban_reason_code','is_stolen_risk'],
+   scenarios:['账号被封查询原因与到期时间','忘记登录方式引导找回','账号被盗触发安全核验','申诉次数查询与申请提交'],
+  },
+  {id:'hero',icon:'⚔️',label:'英雄 Hero',sub:'英雄数据节点',color:'#1D9E75',bg:'#071f17',group:'游戏内容',
+   desc:'存储全部英雄的静态与动态数据，支持英雄推荐、版本强度查询、技能解答等高频咨询场景。版本更新时仅需更新 strength_tier、patch_version 和 patch_note 三个字段。',
+   props:[
+    {name:'hero_id',type:'string',desc:'英雄唯一ID（如 hero_128）PK'},
+    {name:'name',type:'string',desc:'中文名（如 王昭君）'},
+    {name:'name_en',type:'string',desc:'英文名（多语言支持）'},
+    {name:'role',type:'enum',desc:'主定位',enums:['战士','法师','刺客','射手','辅助','坦克']},
+    {name:'sub_role',type:'string',desc:'细分定位（如 控制法师/游走辅助）'},
+    {name:'difficulty',type:'int 1–5',desc:'上手难度星级，1最简单5最难'},
+    {name:'strength_tier',type:'enum',desc:'当前版本强度评级',enums:['S+','S','A','B','C']},
+    {name:'patch_version',type:'string',desc:'最近更新的版本号'},
+    {name:'patch_note',type:'text',desc:'本次版本更新改动说明'},
+    {name:'release_date',type:'date',desc:'英雄上线日期'},
+    {name:'price_gold',type:'int',desc:'金币价格'},
+    {name:'price_coupon',type:'int',desc:'点券价格'},
+    {name:'is_free_rotation',type:'bool',desc:'是否在本周免费轮换池'},
+    {name:'skills',type:'JSON[]',desc:'技能列表：[{name, key, cd, desc}]'},
+    {name:'recommended_build',type:'JSON[]',desc:'当前推荐出装（含装备ID列表）'},
+    {name:'recommended_arcana',type:'JSON[]',desc:'推荐铭文组合'},
+    {name:'counters',type:'string[]',desc:'克制该英雄的英雄ID列表'},
+    {name:'synergies',type:'string[]',desc:'与该英雄配合好的英雄ID列表'},
+    {name:'lore',type:'text',desc:'英雄背景故事简介'},
+    {name:'voice_lines_count',type:'int',desc:'语音台词数量'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'被持有',card:'N:M'},
+    {dir:'out',target:'Skin',label:'拥有皮肤',card:'1:N'},
+    {dir:'out',target:'Issue',label:'关联技能/平衡问题',card:'1:N'},
+    {dir:'in',target:'Season',label:'赛季加入',card:'N:M'},
+   ],
+   indexes:['hero_id','name','role','strength_tier','is_free_rotation'],
+   scenarios:['XX英雄怎么出装','本版本哪个英雄强','英雄技能说明查询','免费英雄本周有哪些'],
+  },
+  {id:'skin',icon:'✨',label:'皮肤 Skin',sub:'皮肤信息节点',color:'#D4537E',bg:'#2a0f1a',group:'游戏内容',
+   desc:'存储所有皮肤的获取途径、稀有度、时效性和归属英雄，是退款判定、皮肤找不到、活动限定皮肤等高频问题的核心检索节点。is_used 标记直接影响退款资格判断。',
+   props:[
+    {name:'skin_id',type:'string',desc:'皮肤唯一ID PK'},
+    {name:'name',type:'string',desc:'皮肤名称'},
+    {name:'hero_id',type:'string',desc:'归属英雄ID FK'},
+    {name:'rarity',type:'enum',desc:'稀有度',enums:['史诗','传说','精品','普通']},
+    {name:'acquire_type',type:'enum',desc:'获取方式',enums:['直购','限时活动','赛季通行证','星元皮肤','排位奖励','碎片兑换','邀请奖励','厂商联名']},
+    {name:'price_coupon',type:'int',desc:'点券直购价格（-1 表示不可直购）'},
+    {name:'price_token',type:'int',desc:'代币/碎片兑换所需数量'},
+    {name:'is_limited',type:'bool',desc:'是否限时皮肤'},
+    {name:'limited_start',type:'timestamp',desc:'限时开始时间'},
+    {name:'limited_end',type:'timestamp',desc:'限时结束时间'},
+    {name:'is_seasonal',type:'bool',desc:'是否赛季限定（赛季结束下架）'},
+    {name:'season_id',type:'string',desc:'关联赛季ID（仅赛季皮肤）'},
+    {name:'is_used',type:'bool',desc:'玩家是否已在对局中使用（影响退款资格）'},
+    {name:'is_in_inventory',type:'bool',desc:'是否在玩家仓库中（用于皮肤丢失排查）'},
+    {name:'purchase_time',type:'timestamp',desc:'玩家购买/获取时间'},
+    {name:'effect_type',type:'string',desc:'特效类型（普通/含特效/含专属动作/含专属音效）'},
+    {name:'has_recall_effect',type:'bool',desc:'是否有专属回城特效'},
+    {name:'has_skill_effect',type:'bool',desc:'是否有技能特效替换'},
+   ],
+   relations:[
+    {dir:'in',target:'Hero',label:'归属英雄',card:'N:1'},
+    {dir:'in',target:'Player',label:'被拥有',card:'N:M'},
+    {dir:'out',target:'Order',label:'关联购买订单',card:'1:1'},
+    {dir:'out',target:'Policy',label:'受退款策略约束',card:'N:M'},
+    {dir:'in',target:'SeasonPass',label:'包含于赛季通行证',card:'N:M'},
+    {dir:'in',target:'Event',label:'通过活动获取',card:'N:M'},
+   ],
+   indexes:['skin_id','hero_id','rarity','acquire_type','is_limited','is_used'],
+   scenarios:['购买的皮肤找不到了','限时皮肤还有多久下架','皮肤能不能退款','活动皮肤获取条件查询'],
+  },
+  {id:'match',icon:'🎮',label:'对局 Match',sub:'对局记录节点',color:'#BA7517',bg:'#1f1300',group:'行为记录',
+   desc:'保存每场对局的全量数据，包含掉线检测、判负溯源和举报记录。当玩家反映"掉线被判负""遭遇外挂"时从此节点溯源，并通过关联 Issue 节点匹配补偿方案。',
+   props:[
+    {name:'match_id',type:'string',desc:'对局唯一ID PK'},
+    {name:'mode',type:'enum',desc:'对局模式',enums:['排位赛','匹配赛','娱乐模式','人机对战','五五开黑']},
+    {name:'map',type:'string',desc:'地图名称（如 王者峡谷）'},
+    {name:'start_time',type:'timestamp',desc:'对局开始时间'},
+    {name:'end_time',type:'timestamp',desc:'对局结束时间'},
+    {name:'duration_seconds',type:'int',desc:'对局实际时长（秒）'},
+    {name:'result',type:'enum',desc:'对局结果',enums:['WIN','LOSE','DRAW','ABANDONED']},
+    {name:'rank_change',type:'int',desc:'段位分变化（负数为扣分）'},
+    {name:'mvp_player_id',type:'string',desc:'MVP 玩家 uid'},
+    {name:'disconnect_duration',type:'int(sec)',desc:'玩家断线时长（秒）'},
+    {name:'disconnect_reason',type:'enum',desc:'断线原因判定',enums:['NETWORK','CLIENT_CRASH','SERVER_ERROR','MANUAL','UNKNOWN']},
+    {name:'penalty_applied',type:'bool',desc:'是否被判定惩罚（判负/扣分）'},
+    {name:'penalty_reason',type:'string',desc:'惩罚原因描述'},
+    {name:'afk_detected',type:'bool',desc:'是否检测到挂机行为'},
+    {name:'cheat_flag',type:'bool',desc:'是否触发外挂检测标记'},
+    {name:'report_count',type:'int',desc:'该局被举报次数'},
+    {name:'server_id',type:'string',desc:'所在游戏服务器ID'},
+    {name:'server_status',type:'enum',desc:'服务器状态',enums:['NORMAL','ERROR','MAINTENANCE']},
+    {name:'is_compensated',type:'bool',desc:'是否已发放异常补偿'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'参与',card:'N:M'},
+    {dir:'out',target:'Issue',label:'触发异常事件',card:'1:N'},
+    {dir:'out',target:'Compensation',label:'触发补偿',card:'1:1'},
+    {dir:'out',target:'Punishment',label:'导致惩罚',card:'1:1'},
+   ],
+   indexes:['match_id','disconnect_reason','cheat_flag','penalty_applied','server_id','start_time'],
+   scenarios:['掉线被判负申诉','遭遇外挂举报追踪','对局记录查询','段位扣分异常排查'],
+  },
+  {id:'order',icon:'💳',label:'订单 Order',sub:'支付与消费',color:'#D85A30',bg:'#2a0f06',group:'行为记录',
+   desc:'存储所有充值和消费订单，是退款流程、充值未到账、重复扣款等问题的核心数据源。通过 refund_eligible 标记与 Policy 节点联动，自动判断退款资格。',
+   props:[
+    {name:'order_id',type:'string',desc:'订单唯一ID PK'},
+    {name:'player_uid',type:'string',desc:'下单玩家 uid FK'},
+    {name:'product_type',type:'enum',desc:'商品类型',enums:['点券','月卡','英雄','皮肤','赛季通行证','活动道具','铭文']},
+    {name:'product_id',type:'string',desc:'具体商品 ID'},
+    {name:'product_name',type:'string',desc:'商品名称'},
+    {name:'amount',type:'decimal',desc:'实付金额（元）'},
+    {name:'currency',type:'string',desc:'币种（CNY/USD/等）'},
+    {name:'coupon_amount',type:'int',desc:'充值获得点券数量'},
+    {name:'payment_channel',type:'enum',desc:'支付渠道',enums:['微信支付','支付宝','苹果内购','Google Play','银行卡']},
+    {name:'payment_status',type:'enum',desc:'支付状态',enums:['PENDING','SUCCESS','FAILED','REFUNDING','REFUNDED']},
+    {name:'paid_at',type:'timestamp',desc:'支付成功时间'},
+    {name:'delivered_at',type:'timestamp',desc:'商品到账时间'},
+    {name:'delivery_delay_seconds',type:'int',desc:'到账延迟（秒），超1800触发预警'},
+    {name:'refund_eligible',type:'bool',desc:'是否满足退款资格'},
+    {name:'refund_reason',type:'string',desc:'退款申请原因'},
+    {name:'refund_requested_at',type:'timestamp',desc:'退款申请时间'},
+    {name:'refund_completed_at',type:'timestamp',desc:'退款到账时间'},
+    {name:'is_duplicate',type:'bool',desc:'是否疑似重复扣款'},
+    {name:'channel_order_id',type:'string',desc:'第三方支付渠道订单号'},
+    {name:'invoice_available',type:'bool',desc:'是否可开具发票'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'由玩家发起',card:'N:1'},
+    {dir:'out',target:'Skin',label:'购买皮肤',card:'1:1'},
+    {dir:'out',target:'Hero',label:'购买英雄',card:'1:1'},
+    {dir:'out',target:'SeasonPass',label:'购买赛季通行证',card:'1:1'},
+    {dir:'out',target:'Policy',label:'受退款策略约束',card:'N:M'},
+    {dir:'out',target:'Issue',label:'关联支付问题',card:'1:1'},
+   ],
+   indexes:['order_id','player_uid','payment_status','product_type','paid_at','is_duplicate'],
+   scenarios:['充值未到账查询','退款资格判断','重复扣款排查','订单记录查询'],
+  },
+  {id:'policy',icon:'📋',label:'规则 Policy',sub:'策略知识节点',color:'#888780',bg:'#181818',group:'工单处理',
+   desc:'知识图谱中唯一的纯"知识型"节点，存储各类封禁标准、退款条件、活动规则的版本化文档。每次版本更新只需修改此节点，下游处理逻辑自动同步，是客服规则一致性的单一来源（SSOT）。',
+   props:[
+    {name:'policy_id',type:'string',desc:'规则唯一ID PK（如 POLICY_REFUND_001）'},
+    {name:'type',type:'enum',desc:'规则类型',enums:['REFUND','BAN','APPEAL','COMPENSATION','MINOR','PRIVACY','FAIR_PLAY']},
+    {name:'title',type:'string',desc:'规则名称'},
+    {name:'content',type:'text',desc:'规则详细说明（支持 Markdown）'},
+    {name:'version',type:'string',desc:'规则版本号（如 v3.2）'},
+    {name:'effective_date',type:'date',desc:'生效日期'},
+    {name:'expire_date',type:'date',desc:'到期日期（null 表示长期有效）'},
+    {name:'is_active',type:'bool',desc:'当前是否生效'},
+    {name:'applicable_platform',type:'string[]',desc:'适用平台（iOS/Android/全平台）'},
+    {name:'applicable_region',type:'string[]',desc:'适用区服（国服/东南亚服/全区）'},
+    {name:'condition_json',type:'JSON',desc:'机器可读的判定条件（用于自动推理）'},
+    {name:'priority',type:'int',desc:'多规则冲突时的优先级（越小越高）'},
+    {name:'related_policies',type:'string[]',desc:'关联规则ID列表'},
+    {name:'faq_ids',type:'string[]',desc:'关联 FAQ 向量库条目ID'},
+    {name:'created_by',type:'string',desc:'规则制定部门'},
+    {name:'last_updated_at',type:'timestamp',desc:'最近修改时间'},
+   ],
+   relations:[
+    {dir:'in',target:'Account',label:'约束账号行为',card:'N:M'},
+    {dir:'in',target:'Order',label:'约束退款流程',card:'N:M'},
+    {dir:'in',target:'Match',label:'约束对局判定',card:'N:M'},
+    {dir:'out',target:'Issue',label:'指导处理方案',card:'1:N'},
+    {dir:'out',target:'Compensation',label:'制定补偿标准',card:'1:N'},
+   ],
+   indexes:['policy_id','type','is_active','applicable_platform','applicable_region'],
+   scenarios:['退款条件自动判断','封禁标准合规核验','补偿金额标准查询','各区服差异化规则适用'],
+  },
+  {id:'issue',icon:'⚠️',label:'异常事件 Issue',sub:'问题工单节点',color:'#E24B4A',bg:'#250a0a',group:'工单处理',
+   desc:'汇聚所有客服问题类型，是 Agent 最终路由的核心枢纽节点。每个 Issue 挂载标准化处理流程（SOP）、关联 Policy 和 Compensation，实现"同类问题→标准答案"快速路由。',
+   props:[
+    {name:'issue_id',type:'string',desc:'工单唯一ID PK'},
+    {name:'player_uid',type:'string',desc:'提交玩家 uid FK'},
+    {name:'type',type:'enum',desc:'问题类型',enums:['账号安全','封禁申诉','充值支付','退款','对局异常','技术Bug','皮肤丢失','活动问题','建议反馈']},
+    {name:'sub_type',type:'string',desc:'细化子类型（如 ACCOUNT_STOLEN/DOUBLE_CHARGE）'},
+    {name:'severity',type:'enum',desc:'严重程度',enums:['P0_CRITICAL','P1_HIGH','P2_NORMAL','P3_LOW']},
+    {name:'status',type:'enum',desc:'处理状态',enums:['OPEN','IN_PROGRESS','PENDING_USER','RESOLVED','CLOSED','ESCALATED']},
+    {name:'channel',type:'enum',desc:'来源渠道',enums:['客服机器人','App 内反馈','官方论坛','微博','微信公众号']},
+    {name:'auto_resolved',type:'bool',desc:'是否由 Agent 自动解决（未升人工）'},
+    {name:'confidence_score',type:'float',desc:'Agent 回复置信度（0–1）'},
+    {name:'escalated_to_human',type:'bool',desc:'是否已升级人工处理'},
+    {name:'escalate_reason',type:'string',desc:'升级原因'},
+    {name:'agent_response',type:'text',desc:'Agent 最终回复内容'},
+    {name:'human_response',type:'text',desc:'人工客服补充回复'},
+    {name:'resolution',type:'text',desc:'最终解决方案描述'},
+    {name:'satisfaction_score',type:'int 1–5',desc:'用户满意度评分'},
+    {name:'created_at',type:'timestamp',desc:'工单创建时间'},
+    {name:'first_response_at',type:'timestamp',desc:'首次回复时间'},
+    {name:'resolved_at',type:'timestamp',desc:'解决时间'},
+    {name:'tags',type:'string[]',desc:'自动打标签（用于统计分析）'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'由玩家提交',card:'N:1'},
+    {dir:'in',target:'Account',label:'触发安全事件',card:'1:1'},
+    {dir:'in',target:'Match',label:'来源对局异常',card:'1:1'},
+    {dir:'in',target:'Order',label:'来源支付问题',card:'1:1'},
+    {dir:'out',target:'Policy',label:'参照处理规则',card:'N:M'},
+    {dir:'out',target:'Compensation',label:'触发补偿方案',card:'1:1'},
+    {dir:'out',target:'Punishment',label:'关联惩罚记录',card:'1:1'},
+   ],
+   indexes:['issue_id','player_uid','type','severity','status','auto_resolved','created_at'],
+   scenarios:['工单路由与优先级分配','Agent 自动解决率统计','高频问题识别与知识库更新','SLA 达标率监控'],
+  },
+  {id:'punishment',icon:'🔨',label:'惩罚记录 Punishment',sub:'封禁与处罚',color:'#993C1D',bg:'#200c07',group:'工单处理',
+   desc:'记录账号所有历史惩罚事件的详情，与 Account 节点形成 1:N 关系。通过 trigger_match_id 关联触发惩罚的具体对局，支持完整的申诉溯源。',
+   props:[
+    {name:'punishment_id',type:'string',desc:'惩罚记录唯一ID PK'},
+    {name:'account_id',type:'string',desc:'受处罚账号ID FK'},
+    {name:'type',type:'enum',desc:'惩罚类型',enums:['CHAT_BAN','MATCH_BAN','LOGIN_BAN','PERMANENT_BAN','RANK_RESET','SCORE_DEDUCT']},
+    {name:'reason_code',type:'string',desc:'原因码（如 CHEAT_SCRIPT/HARASS_ABUSE/AFK_REPEAT）'},
+    {name:'reason_detail',type:'text',desc:'详细判定原因'},
+    {name:'evidence_type',type:'enum',desc:'证据类型',enums:['AI检测','玩家举报','人工审核','系统自动']},
+    {name:'start_time',type:'timestamp',desc:'惩罚生效时间'},
+    {name:'end_time',type:'timestamp',desc:'惩罚结束时间'},
+    {name:'is_permanent',type:'bool',desc:'是否永久处罚'},
+    {name:'trigger_match_id',type:'string',desc:'触发此次惩罚的对局ID'},
+    {name:'report_player_count',type:'int',desc:'举报此次惩罚行为的玩家数'},
+    {name:'appeal_status',type:'enum',desc:'申诉状态',enums:['NONE','PENDING','APPROVED','REJECTED']},
+    {name:'appeal_result_reason',type:'text',desc:'申诉结果说明'},
+    {name:'operator',type:'string',desc:'执行处罚的系统/人工账号'},
+   ],
+   relations:[
+    {dir:'in',target:'Account',label:'归属账号',card:'N:1'},
+    {dir:'in',target:'Match',label:'由对局触发',card:'1:1'},
+    {dir:'out',target:'Policy',label:'依据处罚规则',card:'N:M'},
+    {dir:'out',target:'Issue',label:'关联申诉工单',card:'1:1'},
+   ],
+   indexes:['punishment_id','account_id','type','reason_code','appeal_status','start_time'],
+   scenarios:['查询完整封禁历史','多次申诉记录追踪','惩罚原因与证据核查','永久封禁账号管理'],
+  },
+  {id:'compensation',icon:'🎁',label:'补偿 Compensation',sub:'奖励与赔偿',color:'#185FA5',bg:'#08152a',group:'工单处理',
+   desc:'记录每次补偿的发放详情和领取状态，由 Issue 或 Match 异常触发创建。支持多种补偿类型，通过 claim_status 防止重复发放。与 Policy 节点挂载补偿标准，实现自动化补偿审批。',
+   props:[
+    {name:'compensation_id',type:'string',desc:'补偿记录唯一ID PK'},
+    {name:'player_uid',type:'string',desc:'受益玩家 uid FK'},
+    {name:'trigger_type',type:'enum',desc:'触发来源',enums:['对局异常','服务器故障','充值延迟','活动BUG','人工审核']},
+    {name:'trigger_id',type:'string',desc:'触发来源的ID（match_id/order_id等）'},
+    {name:'compensation_type',type:'enum',desc:'补偿内容类型',enums:['金币','点券','段位分','英雄碎片','皮肤碎片','专属道具','VIP天数']},
+    {name:'amount',type:'int',desc:'补偿数量'},
+    {name:'rank_points_restore',type:'int',desc:'恢复段位分（段位分补偿专用）'},
+    {name:'item_id',type:'string',desc:'具体道具ID（道具补偿时）'},
+    {name:'claim_status',type:'enum',desc:'领取状态',enums:['PENDING','CLAIMED','EXPIRED','CANCELLED']},
+    {name:'issued_at',type:'timestamp',desc:'补偿创建时间'},
+    {name:'claim_deadline',type:'timestamp',desc:'领取截止时间'},
+    {name:'claimed_at',type:'timestamp',desc:'实际领取时间'},
+    {name:'approved_by',type:'string',desc:'审批人（自动/人工账号）'},
+    {name:'policy_id',type:'string',desc:'依据的补偿政策ID'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'发放给玩家',card:'N:1'},
+    {dir:'in',target:'Match',label:'来源对局异常',card:'1:1'},
+    {dir:'in',target:'Issue',label:'来源工单处理',card:'1:1'},
+    {dir:'out',target:'Policy',label:'依据补偿标准',card:'N:1'},
+   ],
+   indexes:['compensation_id','player_uid','claim_status','trigger_type','issued_at'],
+   scenarios:['掉线补偿段位分核查','补偿领取状态查询','未到账补偿催促','重复补偿防止'],
+  },
+  {id:'season',icon:'🏆',label:'赛季 Season',sub:'赛季周期节点',color:'#639922',bg:'#101a07',group:'游戏内容',
+   desc:'管理每个赛季的时间窗口、段位重置规则和皮肤奖励，是赛季通行证、赛季限定皮肤和段位赛咨询的基础数据节点。赛季切换时自动更新 Player 的 rank_tier 字段。',
+   props:[
+    {name:'season_id',type:'string',desc:'赛季唯一ID PK（如 S36）'},
+    {name:'name',type:'string',desc:'赛季名称（如 第36赛季·天命之战）'},
+    {name:'start_date',type:'date',desc:'赛季开始日期'},
+    {name:'end_date',type:'date',desc:'赛季结束日期'},
+    {name:'is_current',type:'bool',desc:'是否为当前赛季'},
+    {name:'rank_reset_rule',type:'JSON',desc:'段位重置规则（各段位重置后目标段位）'},
+    {name:'season_pass_price',type:'int',desc:'赛季通行证价格（点券）'},
+    {name:'season_pass_premium_price',type:'int',desc:'豪华通行证价格（点券）'},
+    {name:'rank_reward_skin_id',type:'string',desc:'赛季排位奖励皮肤ID'},
+    {name:'new_heroes',type:'string[]',desc:'本赛季新增英雄ID列表'},
+    {name:'balance_changes',type:'JSON[]',desc:'本赛季英雄强度调整汇总'},
+    {name:'total_players',type:'int',desc:'参与该赛季的总玩家数'},
+   ],
+   relations:[
+    {dir:'out',target:'Hero',label:'更新英雄强度',card:'1:N'},
+    {dir:'out',target:'Skin',label:'包含赛季限定皮肤',card:'1:N'},
+    {dir:'out',target:'SeasonPass',label:'关联通行证',card:'1:1'},
+    {dir:'out',target:'Policy',label:'适用赛季规则',card:'1:N'},
+   ],
+   indexes:['season_id','is_current','start_date','end_date'],
+   scenarios:['赛季结束时间查询','赛季通行证内容说明','段位重置规则解释','赛季限定皮肤获取方式'],
+  },
+  {id:'seasonpass',icon:'🎫',label:'赛季通行证 SeasonPass',sub:'订阅商品节点',color:'#3B6D11',bg:'#0a1505',group:'游戏内容',
+   desc:'管理玩家购买的赛季通行证状态，包含免费版和高级版的差异化奖励轨道。是"通行证买了没生效""奖励没有解锁"类问题的核心节点。',
+   props:[
+    {name:'pass_id',type:'string',desc:'通行证记录ID PK'},
+    {name:'player_uid',type:'string',desc:'持有玩家 uid FK'},
+    {name:'season_id',type:'string',desc:'所属赛季ID FK'},
+    {name:'tier',type:'enum',desc:'通行证档位',enums:['FREE','PREMIUM','DELUXE']},
+    {name:'purchase_order_id',type:'string',desc:'购买订单ID'},
+    {name:'is_active',type:'bool',desc:'是否已激活'},
+    {name:'activated_at',type:'timestamp',desc:'激活时间'},
+    {name:'current_level',type:'int',desc:'当前通行证等级'},
+    {name:'max_level',type:'int',desc:'最大等级（如 100）'},
+    {name:'claimed_rewards',type:'int[]',desc:'已领取的奖励等级列表'},
+    {name:'unclaimed_rewards',type:'int[]',desc:'未领取但已解锁的奖励列表'},
+    {name:'exp_today',type:'int',desc:'今日获得经验值'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'订阅',card:'N:1'},
+    {dir:'out',target:'Season',label:'归属赛季',card:'N:1'},
+    {dir:'out',target:'Order',label:'由订单激活',card:'1:1'},
+    {dir:'out',target:'Skin',label:'包含皮肤奖励',card:'1:N'},
+   ],
+   indexes:['pass_id','player_uid','season_id','tier','is_active'],
+   scenarios:['通行证购买未激活','通行证奖励未解锁','高级通行证权益说明','赛季结束前未领取奖励'],
+  },
+  {id:'device',icon:'📱',label:'设备 Device',sub:'设备信息节点',color:'#5F5E5A',bg:'#141414',group:'行为记录',
+   desc:'记录玩家使用的所有设备信息，主要用于账号安全判断（异地登录检测、多开检测）和技术支持（崩溃、卡顿问题定位）。设备指纹是反作弊系统的重要数据来源。',
+   props:[
+    {name:'device_id',type:'string',desc:'设备唯一标识（硬件指纹）PK'},
+    {name:'player_uid',type:'string',desc:'关联玩家 uid FK'},
+    {name:'device_type',type:'enum',desc:'设备类型',enums:['ANDROID_PHONE','ANDROID_TABLET','IPHONE','IPAD','PC_WINDOWS','PC_MAC']},
+    {name:'brand',type:'string',desc:'设备品牌（如 Apple/Samsung/HUAWEI）'},
+    {name:'model',type:'string',desc:'具体型号（如 iPhone 16 Pro）'},
+    {name:'os_version',type:'string',desc:'操作系统版本'},
+    {name:'app_version',type:'string',desc:'王者荣耀客户端版本'},
+    {name:'screen_resolution',type:'string',desc:'屏幕分辨率（如 2556x1179）'},
+    {name:'cpu',type:'string',desc:'处理器型号（用于性能问题诊断）'},
+    {name:'ram_gb',type:'int',desc:'内存大小（GB）'},
+    {name:'storage_free_gb',type:'float',desc:'剩余存储空间（GB）'},
+    {name:'network_type',type:'enum',desc:'网络类型',enums:['WIFI','5G','4G','3G','ETHERNET']},
+    {name:'is_rooted_or_jailbroken',type:'bool',desc:'是否 Root/越狱（反作弊关键字段）'},
+    {name:'is_emulator',type:'bool',desc:'是否模拟器环境'},
+    {name:'last_seen_at',type:'timestamp',desc:'最近使用时间'},
+    {name:'login_count',type:'int',desc:'该设备累计登录次数'},
+   ],
+   relations:[
+    {dir:'in',target:'Player',label:'被玩家使用',card:'N:1'},
+    {dir:'in',target:'Account',label:'账号从此设备登录',card:'N:M'},
+   ],
+   indexes:['device_id','player_uid','is_rooted_or_jailbroken','is_emulator','device_type'],
+   scenarios:['账号异地登录安全预警','模拟器检测与封禁依据','崩溃/卡顿问题设备信息收集','多设备登录管理'],
+  },
+  {id:'event',icon:'🎉',label:'活动 Event',sub:'游戏活动节点',color:'#854F0B',bg:'#1c1005',group:'游戏内容',
+   desc:'管理所有限时活动的配置信息，是活动奖励领取问题、活动时间查询、活动规则解读的核心节点。与 Skin、SeasonPass 节点关联，支持活动皮肤归属追踪。',
+   props:[
+    {name:'event_id',type:'string',desc:'活动唯一ID PK'},
+    {name:'name',type:'string',desc:'活动名称'},
+    {name:'type',type:'enum',desc:'活动类型',enums:['签到','抽奖','任务挑战','限时折扣','联名活动','赛事活动','节日活动']},
+    {name:'start_time',type:'timestamp',desc:'活动开始时间'},
+    {name:'end_time',type:'timestamp',desc:'活动结束时间'},
+    {name:'is_active',type:'bool',desc:'当前是否进行中'},
+    {name:'applicable_region',type:'string[]',desc:'适用区服'},
+    {name:'reward_pool',type:'JSON[]',desc:'奖励池详情（含皮肤/道具/点券）'},
+    {name:'participation_condition',type:'text',desc:'参与条件（如 账号等级≥10）'},
+    {name:'task_list',type:'JSON[]',desc:'任务列表（任务名/条件/奖励）'},
+    {name:'max_reward_per_player',type:'JSON',desc:'每玩家最大奖励上限'},
+    {name:'faq_link',type:'string',desc:'活动 FAQ 链接'},
+   ],
+   relations:[
+    {dir:'out',target:'Skin',label:'活动可获取皮肤',card:'1:N'},
+    {dir:'out',target:'Policy',label:'遵循活动规则',card:'N:M'},
+    {dir:'out',target:'Issue',label:'活动问题触发工单',card:'1:N'},
+    {dir:'in',target:'Season',label:'属于该赛季活动',card:'N:1'},
+   ],
+   indexes:['event_id','type','is_active','start_time','end_time','applicable_region'],
+   scenarios:['活动奖励未到账','活动时间查询','活动参与条件解释','活动皮肤获取路径追踪'],
+  },
+];
+
+const INTENTS=[
+  {id:'account',color:'#378ADD',label:'账号与安全',count:8,desc:'处理所有账号登录、找回、封禁、申诉相关问题',
+   subs:['登录失败','账号找回','账号被封禁','封禁申诉','账号被盗','解除安全锁','注销账号','未成年人限制'],
+   slots:[
+    {name:'uid',type:'string',req:true,desc:'玩家唯一标识'},
+    {name:'login_type',type:'enum',req:false,desc:'登录方式（微信/QQ/手机号）'},
+    {name:'ban_reason',type:'string',req:false,desc:'封禁原因关键词'},
+    {name:'phone_last4',type:'string',req:false,desc:'绑定手机号后四位'},
+    {name:'appeal_type',type:'enum',req:false,desc:'申诉类型'},
+   ]},
+  {id:'hero_skin',color:'#1D9E75',label:'英雄与皮肤',count:7,desc:'英雄购买、皮肤获取、仓库丢失、功能咨询',
+   subs:['英雄怎么玩','英雄购买方式','皮肤找不到','皮肤获取途径','限时皮肤查询','皮肤退款','英雄强度咨询'],
+   slots:[
+    {name:'hero_name',type:'string',req:true,desc:'英雄名称（NER提取）'},
+    {name:'skin_name',type:'string',req:false,desc:'皮肤名称（NER提取）'},
+    {name:'skin_id',type:'string',req:false,desc:'皮肤唯一标识'},
+    {name:'acquire_time',type:'timestamp',req:false,desc:'购买/获取时间'},
+    {name:'order_id',type:'string',req:false,desc:'购买订单号'},
+   ]},
+  {id:'match',color:'#BA7517',label:'对局与段位',count:9,desc:'掉线被判负、外挂举报、段位异常、补偿申请',
+   subs:['掉线被判负','段位分异常','遭遇外挂','挂机举报','对局记录查询','禁赛申诉','匹配机制咨询','战绩查询','铭文推荐'],
+   slots:[
+    {name:'match_id',type:'string',req:false,desc:'对局唯一ID'},
+    {name:'match_time',type:'timestamp',req:true,desc:'对局时间（用于检索）'},
+    {name:'hero_played',type:'string',req:false,desc:'使用的英雄'},
+    {name:'disconnect_duration',type:'int',req:false,desc:'断线时长（秒）'},
+    {name:'report_target_uid',type:'string',req:false,desc:'被举报玩家UID'},
+   ]},
+  {id:'payment',color:'#D85A30',label:'充值与退款',count:7,desc:'充值到账、退款申请、重复扣款、订单查询',
+   subs:['充值未到账','退款申请','重复扣款','赛季通行证问题','点券消费记录','发票申请','礼品卡充值'],
+   slots:[
+    {name:'order_id',type:'string',req:true,desc:'支付订单号'},
+    {name:'amount',type:'decimal',req:false,desc:'充值金额'},
+    {name:'payment_channel',type:'enum',req:false,desc:'支付渠道'},
+    {name:'paid_at',type:'timestamp',req:false,desc:'支付时间'},
+    {name:'product_name',type:'string',req:false,desc:'购买商品名称'},
+    {name:'channel_order_id',type:'string',req:false,desc:'第三方支付流水号'},
+   ]},
+  {id:'rules',color:'#7F77DD',label:'游戏规则与活动',count:7,desc:'游戏机制解释、活动规则、版本更新、功能咨询',
+   subs:['活动规则查询','版本更新内容','赛季时间查询','防沉迷规则','好友系统问题','公会系统问题','直播功能咨询'],
+   slots:[
+    {name:'event_name',type:'string',req:false,desc:'活动名称'},
+    {name:'event_id',type:'string',req:false,desc:'活动ID'},
+    {name:'season_id',type:'string',req:false,desc:'赛季编号'},
+    {name:'feature_name',type:'string',req:false,desc:'功能名称'},
+    {name:'platform',type:'enum',req:false,desc:'平台（用于差异化引导）'},
+   ]},
+];
+
+function buildSidebar(){
+  const sb=document.getElementById('sidebar');
+  const groups={};
+  NODES.forEach(n=>{if(!groups[n.group])groups[n.group]=[];groups[n.group].push(n);});
+  let html='';
+  Object.entries(groups).forEach(([g,nodes])=>{
+    html+=`<div class="sidebar-group-label">${g}</div>`;
+    nodes.forEach(n=>{
+      html+=`<button class="node-btn" onclick="showNode('${n.id}')" id="btn-${n.id}">
+        <div class="node-dot" style="background:${n.color}"></div>
+        <div class="node-btn-text"><div class="name">${n.label}</div><div class="sub">${n.sub}</div></div>
+      </button>`;
+    });
+  });
+  sb.innerHTML=html;
+}
+
+function showNode(id){
+  const n=NODES.find(x=>x.id===id);
+  if(!n)return;
+  document.querySelectorAll('.node-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('btn-'+id);
+  if(btn)btn.classList.add('active');
+  let propsHtml=n.props.map(p=>`<tr>
+    <td class="prop-name">${p.name}</td>
+    <td class="prop-type-badge">${p.type}</td>
+    <td class="prop-desc">${p.desc}${p.enums?`<div class="prop-enum">枚举值: ${p.enums.join(' / ')}</div>`:''}</td>
+  </tr>`).join('');
+  let relsHtml=n.relations.map(r=>{
+    const target=NODES.find(x=>x.label.includes(r.target));
+    const col=target?target.color:'#888';
+    return`<div class="rel-card">
+      <span class="rel-dir ${r.dir}">${r.dir==='out'?'→ 出':'← 入'}</span>
+      <div class="rel-dot" style="background:${col}"></div>
+      <span class="rel-target">${r.target}</span>
+      <span class="rel-name-badge" style="color:${col}">${r.label}</span>
+      <span class="rel-cardinality">${r.card}</span>
+    </div>`;
+  }).join('');
+  let idxHtml=n.indexes.map(i=>`<span class="idx-tag">${i}</span>`).join('');
+  let sceneHtml=n.scenarios.map(s=>`<span class="scene-tag">${s}</span>`).join('');
+  document.getElementById('detail-panel').innerHTML=`
+    <div class="detail-hero">
+      <div class="detail-icon-wrap" style="background:${n.bg};border-color:${n.color}40">
+        <span style="font-size:20px">${n.icon}</span>
+      </div>
+      <div class="detail-hero-text">
+        <div class="node-type" style="color:${n.color}">${n.group}</div>
+        <h3 style="color:${n.color}">${n.label}</h3>
+        <div class="node-desc">${n.desc}</div>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="block-label">属性字段（${n.props.length} 个）</div>
+      <table class="props-table">${propsHtml}</table>
+      <div class="block-label">关系边（${n.relations.length} 条）</div>
+      <div class="rel-grid">${relsHtml}</div>
+      <div class="block-label">索引字段</div>
+      <div class="tag-list">${idxHtml}</div>
+      <div class="block-label">典型查询场景</div>
+      <div class="tag-list">${sceneHtml}</div>
+    </div>`;
+}
+
+function buildIntents(){
+  const c=document.getElementById('intent-container');
+  c.innerHTML=INTENTS.map(it=>`
+    <div class="intent-card">
+      <div class="intent-header">
+        <div class="intent-color" style="background:${it.color}"></div>
+        <h4>${it.label}</h4>
+        <span class="intent-count">${it.count} 子意图</span>
+      </div>
+      <div class="intent-body">
+        <div class="block-label" style="margin-top:0">子意图列表</div>
+        <div class="sub-intents">${it.subs.map(s=>`<span class="sub-tag">${s}</span>`).join('')}</div>
+        <div class="block-label">槽位定义</div>
+        <table class="slots-table">
+          <thead><tr><th>槽位名</th><th>类型</th><th>说明</th><th>必填</th></tr></thead>
+          <tbody>${it.slots.map(sl=>`<tr>
+            <td>${sl.name}</td><td>${sl.type}</td><td>${sl.desc}</td>
+            <td>${sl.req?'<span class="required-badge">必填</span>':'<span class="optional-badge">可选</span>'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+
+function switchTab(tab,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+// RELATION GRAPH DATA
+// ═══════════════════════════════════════════════
+const RELATIONS = [
+  // 核心实体域内
+  {from:'Player',rel:'拥有',to:'Account',card:'1:1',type:'owns',purpose:'玩家唯一对应一个账号，所有安全查询入口'},
+  // 核心实体 → 游戏内容
+  {from:'Player',rel:'持有英雄',to:'Hero',card:'N:M',type:'behav',purpose:'记录玩家已购买的英雄，支持库存核查'},
+  {from:'Player',rel:'持有皮肤',to:'Skin',card:'N:M',type:'behav',purpose:'记录玩家已获取的皮肤，是皮肤丢失排查起点'},
+  {from:'Player',rel:'订阅',to:'SeasonPass',card:'1:N',type:'behav',purpose:'玩家购买的赛季通行证记录'},
+  // 核心实体 → 行为记录
+  {from:'Player',rel:'参与对局',to:'Match',card:'1:N',type:'behav',purpose:'玩家战绩入口，每场对局关联多名玩家'},
+  {from:'Player',rel:'发起订单',to:'Order',card:'1:N',type:'behav',purpose:'全部充值/消费记录，退款查询起点'},
+  {from:'Player',rel:'使用设备',to:'Device',card:'1:N',type:'behav',purpose:'多设备登录记录，异地登录安全检测依据'},
+  // 核心实体 → 工单处理
+  {from:'Player',rel:'提交工单',to:'Issue',card:'1:N',type:'ticket',purpose:'玩家所有历史客服工单，满意度统计来源'},
+  {from:'Player',rel:'领取补偿',to:'Compensation',card:'1:N',type:'ticket',purpose:'补偿发放记录，防止重复补偿'},
+  // Account → 工单处理
+  {from:'Account',rel:'关联惩罚',to:'Punishment',card:'1:N',type:'ticket',purpose:'账号封禁历史，申诉溯源的核心链路'},
+  {from:'Account',rel:'受约束于',to:'Policy',card:'N:M',type:'rule',purpose:'封禁规则、申诉规则对账号行为的约束'},
+  {from:'Account',rel:'触发安全事件',to:'Issue',card:'1:N',type:'ticket',purpose:'账号异常自动创建安全类工单'},
+  {from:'Account',rel:'登录自',to:'Device',card:'N:M',type:'behav',purpose:'账号与设备多对多，检测异常登录设备'},
+  // 游戏内容域内
+  {from:'Hero',rel:'拥有皮肤',to:'Skin',card:'1:N',type:'owns',purpose:'英雄与皮肤的归属关系，皮肤查询必经节点'},
+  {from:'Season',rel:'包含英雄',to:'Hero',card:'N:M',type:'owns',purpose:'赛季新增英雄及版本强度更新记录'},
+  {from:'Season',rel:'包含皮肤',to:'Skin',card:'1:N',type:'owns',purpose:'赛季限定皮肤列表，赛季结束后归档'},
+  {from:'Season',rel:'关联通行证',to:'SeasonPass',card:'1:1',type:'owns',purpose:'每赛季对应一个通行证商品'},
+  {from:'Season',rel:'包含活动',to:'Event',card:'1:N',type:'owns',purpose:'赛季内所有限时活动的归属管理'},
+  {from:'Event',rel:'活动含皮肤',to:'Skin',card:'1:N',type:'owns',purpose:'活动可获取的皮肤列表，皮肤来源溯源'},
+  // 游戏内容 → 行为记录
+  {from:'SeasonPass',rel:'由订单激活',to:'Order',card:'1:1',type:'behav',purpose:'通行证与购买订单绑定，激活状态核查'},
+  {from:'Skin',rel:'关联购买订单',to:'Order',card:'1:1',type:'behav',purpose:'皮肤与购买订单一一对应，退款资格判断'},
+  // 游戏内容 → 工单处理
+  {from:'Hero',rel:'关联技能问题',to:'Issue',card:'1:N',type:'ticket',purpose:'英雄技能 Bug 或平衡性投诉工单'},
+  {from:'Event',rel:'触发活动工单',to:'Issue',card:'1:N',type:'ticket',purpose:'活动奖励未到账、活动 Bug 类工单'},
+  // 行为记录 → 行为记录
+  {from:'Order',rel:'购买英雄',to:'Hero',card:'1:1',type:'behav',purpose:'订单指向购买的英雄，核查是否已入库'},
+  {from:'Order',rel:'购买皮肤',to:'Skin',card:'1:1',type:'behav',purpose:'订单指向购买的皮肤，is_used 退款判断'},
+  {from:'Order',rel:'购买通行证',to:'SeasonPass',card:'1:1',type:'behav',purpose:'订单激活通行证，通行证问题溯源起点'},
+  // 行为记录 → 工单处理
+  {from:'Match',rel:'触发异常工单',to:'Issue',card:'1:N',type:'ticket',purpose:'掉线/外挂/挂机等对局问题工单创建'},
+  {from:'Match',rel:'触发补偿',to:'Compensation',card:'1:1',type:'ticket',purpose:'对局异常自动触发补偿审批流程'},
+  {from:'Match',rel:'导致惩罚',to:'Punishment',card:'1:1',type:'ticket',purpose:'违规对局触发惩罚记录写入'},
+  {from:'Order',rel:'关联支付问题',to:'Issue',card:'1:1',type:'ticket',purpose:'充值异常、退款申请工单关联订单证据'},
+  // 工单处理域内
+  {from:'Issue',rel:'触发补偿',to:'Compensation',card:'1:1',type:'ticket',purpose:'工单处理结果触发补偿发放'},
+  {from:'Issue',rel:'关联惩罚',to:'Punishment',card:'1:1',type:'ticket',purpose:'申诉工单与对应惩罚记录双向关联'},
+  {from:'Punishment',rel:'关联申诉',to:'Issue',card:'1:1',type:'ticket',purpose:'申诉入口，惩罚节点反查工单状态'},
+  // 规则约束（Policy 出边）
+  {from:'Policy',rel:'约束退款流程',to:'Order',card:'N:M',type:'rule',purpose:'退款条件判断的规则依据，自动资格核验'},
+  {from:'Policy',rel:'约束对局判定',to:'Match',card:'N:M',type:'rule',purpose:'判负/补偿标准的规则来源'},
+  {from:'Policy',rel:'指导处理方案',to:'Issue',card:'1:N',type:'rule',purpose:'工单处理 SOP 的规则来源，确保一致性'},
+  {from:'Policy',rel:'制定补偿标准',to:'Compensation',card:'1:N',type:'rule',purpose:'各类异常的补偿金额和类型标准'},
+  {from:'Event',rel:'遵循活动规则',to:'Policy',card:'N:M',type:'rule',purpose:'活动的奖励发放和参与规则合规约束'},
+  {from:'SeasonPass',rel:'含皮肤奖励',to:'Skin',card:'1:N',type:'owns',purpose:'通行证包含的皮肤奖励列表'},
+];
+
+const HOP_PATHS = [
+  {nodes:['Player','Account','Punishment','Issue'],edges:['拥有','关联惩罚','关联申诉'],color:'#E24B4A',purpose:'封禁申诉全链路：从玩家入口找到所有申诉工单'},
+  {nodes:['Player','Order','Skin','Policy'],edges:['发起订单','购买皮肤','受退款策略约束'],color:'#D85A30',purpose:'退款资格判断：从订单到皮肤再到退款规则核验'},
+  {nodes:['Player','Match','Compensation','Policy'],edges:['参与对局','触发补偿','依据补偿标准'],color:'#BA7517',purpose:'对局补偿链路：掉线对局自动触发补偿并核验标准'},
+  {nodes:['Player','Account','Device','Issue'],edges:['拥有','登录自','（异常）触发'],color:'#378ADD',purpose:'账号安全链路：通过设备指纹检测异地登录风险'},
+  {nodes:['Player','SeasonPass','Season','Skin'],edges:['订阅','归属赛季','包含皮肤'],color:'#639922',purpose:'通行证皮肤链路：核查通行证包含的赛季限定皮肤'},
+  {nodes:['Hero','Skin','Order','Player'],edges:['拥有皮肤','关联购买订单','发起自'],color:'#D4537E',purpose:'皮肤溯源链路：从英雄反查皮肤购买者（丢失排查）'},
+  {nodes:['Event','Skin','Order','Issue'],edges:['活动含皮肤','关联购买订单','关联支付问题'],color:'#854F0B',purpose:'活动皮肤工单：活动皮肤未到账的完整溯源路径'},
+  {nodes:['Match','Punishment','Account','Policy'],edges:['导致惩罚','归属账号','受约束于'],color:'#993C1D',purpose:'惩罚合规验证：确认封禁是否符合当前有效规则'},
+];
+
+const NODE_COLORS = {
+  Player:'#7F77DD',Account:'#378ADD',Hero:'#1D9E75',Skin:'#D4537E',
+  Season:'#639922',SeasonPass:'#3B6D11',Event:'#854F0B',
+  Match:'#BA7517',Order:'#D85A30',Device:'#5F5E5A',
+  Issue:'#E24B4A',Punishment:'#993C1D',Compensation:'#185FA5',Policy:'#888780'
+};
+
+const ALL_NODES_LIST = ['Player','Account','Hero','Skin','Season','SeasonPass','Event','Match','Order','Device','Issue','Punishment','Compensation','Policy'];
+
+function buildRelTable(){
+  const tbody = document.getElementById('rel-table-body');
+  const typeMap = {owns:'rel-type-owns',behav:'rel-type-behav',rule:'rel-type-rule',ticket:'rel-type-ticket'};
+  const typeLabel = {owns:'归属/拥有',behav:'行为/参与',rule:'规则/约束',ticket:'触发/关联'};
+  tbody.innerHTML = RELATIONS.map((r,i)=>`<tr>
+    <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:11px">${String(i+1).padStart(2,'0')}</td>
+    <td><span class="rel-from" style="color:${NODE_COLORS[r.from]||'var(--text)'}">${r.from}</span></td>
+    <td><span class="rel-name-col" style="color:var(--text)">${r.rel}</span></td>
+    <td><span class="rel-to" style="color:${NODE_COLORS[r.to]||'var(--text)'}">${r.to}</span></td>
+    <td><span class="rel-card-col">${r.card}</span></td>
+    <td><span class="rel-type-badge ${typeMap[r.type]}">${typeLabel[r.type]}</span></td>
+    <td class="rel-purpose">${r.purpose}</td>
+  </tr>`).join('');
+}
+
+function buildMatrix(){
+  const table = document.getElementById('matrix-table');
+  const domains = {
+    '核心实体':['Player','Account'],
+    '游戏内容':['Hero','Skin','Season','SeasonPass','Event'],
+    '行为记录':['Match','Order','Device'],
+    '工单处理':['Issue','Punishment','Compensation','Policy']
+  };
+  const domColors = {'核心实体':'var(--purple)','游戏内容':'var(--teal)','行为记录':'var(--amber)','工单处理':'var(--red)'};
+
+  // Build adjacency: from→to = rel names
+  const adj = {};
+  RELATIONS.forEach(r=>{
+    if(!adj[r.from]) adj[r.from]={};
+    if(!adj[r.from][r.to]) adj[r.from][r.to]=[];
+    adj[r.from][r.to].push(r.rel);
+  });
+
+  // Column headers (domains)
+  let html = '<thead><tr><th style="min-width:90px">域 / 节点</th>';
+  Object.entries(domains).forEach(([dom,nodes])=>{
+    html += `<th colspan="${nodes.length}" style="color:${domColors[dom]};border-bottom:2px solid ${domColors[dom]}">${dom}</th>`;
+  });
+  html += '</tr><tr><th></th>';
+  Object.values(domains).flat().forEach(n=>{
+    html += `<th style="color:${NODE_COLORS[n]};min-width:72px;font-family:'JetBrains Mono',monospace">${n}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  const allCols = Object.values(domains).flat();
+  Object.entries(domains).forEach(([dom,rows])=>{
+    rows.forEach((rNode,ri)=>{
+      html += `<tr><td class="row-header" style="color:${NODE_COLORS[rNode]}">${rNode}</td>`;
+      allCols.forEach(cNode=>{
+        if(rNode===cNode){html+='<td class="matrix-cell-none" style="background:rgba(255,255,255,.03)">—</td>';return;}
+        const rels = (adj[rNode]&&adj[rNode][cNode])||[];
+        const rrev = (adj[cNode]&&adj[cNode][rNode])||[];
+        if(rels.length>0 && rrev.length>0){
+          html+=`<td><span class="matrix-cell-strong" title="${rels.concat(rrev).join(', ')}">双向</span></td>`;
+        } else if(rels.length>0){
+          html+=`<td><span class="matrix-cell-strong" title="${rels.join(', ')}">→ ${rels.length}</span></td>`;
+        } else if(rrev.length>0){
+          html+=`<td><span class="matrix-cell-weak" title="${rrev.join(', ')}">← ${rrev.length}</span></td>`;
+        } else {
+          html+='<td class="matrix-cell-none">·</td>';
+        }
+      });
+      html+='</tr>';
+    });
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+}
+
+function buildHopPaths(){
+  const container = document.getElementById('hop-paths');
+  container.innerHTML = HOP_PATHS.map(p=>{
+    let inner='';
+    p.nodes.forEach((n,i)=>{
+      inner+=`<span class="hop-node" style="background:${NODE_COLORS[n]}22;color:${NODE_COLORS[n]};border:1px solid ${NODE_COLORS[n]}44">${n}</span>`;
+      if(i<p.edges.length){
+        inner+=`<span class="hop-edge">→ <span>${p.edges[i]}</span> →</span>`;
+      }
+    });
+    return `<div class="hop-path">${inner}<span class="hop-purpose">${p.purpose}</span></div>`;
+  }).join('');
+}
+
+function buildDegreeTable(){
+  const tbody = document.getElementById('degree-table-body');
+  const outDeg={}, inDeg={};
+  ALL_NODES_LIST.forEach(n=>{outDeg[n]=0;inDeg[n]=0;});
+  RELATIONS.forEach(r=>{
+    if(outDeg[r.from]!==undefined) outDeg[r.from]++;
+    if(inDeg[r.to]!==undefined) inDeg[r.to]++;
+  });
+  const sorted = ALL_NODES_LIST.map(n=>({n,out:outDeg[n],in:inDeg[n],total:outDeg[n]+inDeg[n]}))
+    .sort((a,b)=>b.total-a.total);
+  const maxTotal = sorted[0].total;
+  const roleMap={
+    Player:'全局入口，所有查询起点',Account:'安全核心，封禁申诉枢纽',
+    Policy:'规则中心，知识 SSOT',Issue:'工单枢纽，处理流路由核心',
+    Hero:'内容核心，高频咨询节点',Skin:'皮肤归属，退款判定关键',
+    Order:'消费记录，支付问题锚点',Match:'对局记录，异常补偿触发',
+    Punishment:'惩罚历史，申诉溯源',Season:'时间窗口，赛季周期管理',
+    SeasonPass:'订阅商品，通行证状态',Compensation:'补偿记录，防止重复发放',
+    Event:'活动管理，时效性节点',Device:'设备指纹，安全检测辅助'
+  };
+  const centralRole={Player:'超级枢纽',Account:'安全枢纽',Policy:'知识枢纽',Issue:'工单枢纽',Hero:'内容枢纽',Order:'消费枢纽'};
+  tbody.innerHTML = sorted.map((d,i)=>{
+    const bar = Math.round((d.total/maxTotal)*80);
+    const role = centralRole[d.n]?`<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(240,192,64,.15);color:var(--gold);font-weight:500">${centralRole[d.n]}</span>`:'<span style="color:var(--text3);font-size:11px">普通节点</span>';
+    return `<tr>
+      <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:${NODE_COLORS[d.n]}">${d.n}</span></td>
+      <td style="color:var(--teal);font-family:'JetBrains Mono',monospace;font-size:12px">${d.out}</td>
+      <td style="color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:12px">${d.in}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:500;font-family:'JetBrains Mono',monospace;font-size:12px">${d.total}</span><div style="width:${bar}px;height:4px;background:${NODE_COLORS[d.n]};border-radius:2px;opacity:.7"></div></div></td>
+      <td>${role}</td>
+      <td style="color:var(--text2);font-size:11px">${roleMap[d.n]||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+buildRelTable();
+buildMatrix();
+buildHopPaths();
+buildDegreeTable();
+buildSidebar();
+buildIntents();
+showNode('player');
+</script>
 </body>
 </html>
